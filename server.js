@@ -8,31 +8,42 @@ const io = new Server(server);
 
 app.use(express.static(__dirname));
 
+// Il cuore del gioco: vive solo nella RAM, non viene scritto su disco
 let gameState = {
-    name: "Viral Zone Milano",
-    startTime: null,
+    name: "Viral Zone",
     endTime: null,
     active: false,
-    center: { lat: 45.4642, lng: 9.1900 }, // Default: Milano
-    radius: 500, // metri
     users: {}
 };
+
+function resetGame() {
+    console.log("Timer scaduto: Cancellazione totale dati in corso...");
+    gameState.users = {};
+    gameState.active = false;
+    gameState.endTime = null;
+    io.emit('gameDeleted', { message: "Dati eliminati per la tua privacy." });
+}
 
 io.on('connection', (socket) => {
     socket.emit('sync', gameState);
 
     socket.on('adminStart', (data) => {
-        gameState.name = data.name || "Evento Live";
         let durationMs = data.unit === 'min' ? data.value * 60000 : data.value * 3600000;
         gameState.endTime = Date.now() + durationMs;
         gameState.active = true;
-        io.emit('timerStarted', { endTime: gameState.endTime, name: gameState.name });
+        io.emit('timerStarted', { endTime: gameState.endTime, name: data.name });
+
+        // Imposta il "timer di autodistruzione"
+        setTimeout(() => {
+            resetGame();
+        }, durationMs);
     });
 
     socket.on('registerUser', (userData) => {
+        if (!gameState.active) return;
         gameState.users[socket.id] = { 
             id: socket.id,
-            nick: userData.nick || "User" + Math.floor(Math.random()*100),
+            nick: userData.nick || "Anonimo" + Math.floor(Math.random()*100),
             lat: userData.lat,
             lng: userData.lng,
             reactions: { '👍': 0, '❤️': 0, '🔥': 0, '🙌': 0, '😎': 0, '✨': 0 }
@@ -41,14 +52,12 @@ io.on('connection', (socket) => {
         io.emit('updateMap', gameState.users);
     });
 
-    socket.on('updateLocation', (coords) => {
-        if (gameState.users[socket.id]) {
-            gameState.users[socket.id].lat = coords.lat;
-            gameState.users[socket.id].lng = coords.lng;
-            io.emit('updateMap', gameState.users);
-        }
+    socket.on('disconnect', () => {
+        // Rimuove l'utente se chiude la pagina (opzionale, ma aumenta la privacy)
+        delete gameState.users[socket.id];
+        io.emit('updateMap', gameState.users);
     });
 });
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => console.log('Server Mappa Pronto'));
+server.listen(PORT, () => console.log('Server Privacy-First Pronto'));

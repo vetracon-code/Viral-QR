@@ -3,98 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viral QR - Radar</title>
+    <title>Viral QR - Privacy Radar</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { --ws-green: #25D366; --ws-dark: #075E54; --ws-bg: #f0f2f5; }
         body { font-family: sans-serif; background: var(--ws-bg); margin:0; }
-        .app-container { max-width: 450px; margin: auto; background: white; min-height: 100vh; display: flex; flex-direction: column; }
+        .app-container { max-width: 450px; margin: auto; background: white; min-height: 100vh; position: relative; }
         .header { background: var(--ws-dark); color: white; padding: 15px; text-align: center; }
-        #map { height: 250px; width: 100%; }
+        #map { height: 250px; width: 100%; filter: grayscale(0.5); }
         .content { padding: 15px; text-align: center; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        .btn-green { background: var(--ws-green); color: white; border: none; padding: 12px; width: 100%; border-radius: 25px; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
-        .btn-share { background: #128C7E; color: white; border: none; padding: 10px; border-radius: 20px; width: 100%; font-size: 0.9rem; cursor: pointer; }
+        .privacy-note { font-size: 0.7rem; color: #777; margin-top: 10px; line-height: 1.2; }
+        .btn-green { background: var(--ws-green); color: white; border: none; padding: 12px; width: 100%; border-radius: 25px; font-weight: bold; cursor: pointer; }
         .hidden { display: none; }
-        #qr-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:1000; display:none; flex-direction:column; align-items:center; justify-content:center; }
     </style>
 </head>
 <body>
-    <div id="qr-overlay" onclick="this.style.display='none'">
-        <h2>Il Tuo Passaporto Social</h2>
-        <div id="big-qr"></div>
-        <p>Tocca per chiudere</p>
-    </div>
-
     <div class="app-container">
         <div class="header">
-            <h2 id="event-name">Viral QR Radar</h2>
-            <div id="timer-display">00:00:00</div>
+            <h2 id="event-title">Viral Zone</h2>
+            <div id="timer-display">ATTESA...</div>
         </div>
-
         <div id="map"></div>
-
         <div class="content">
-            <div id="reg-section" class="card">
-                <input type="text" id="nickname" placeholder="Nome..." style="width:80%; padding:10px; margin-bottom:10px;">
-                <button class="btn-green" onclick="registerUser()">ENTRA NEL RADAR</button>
+            <div id="reg-section">
+                <h3>Partecipa in Anonimato</h3>
+                <input type="text" id="nickname" placeholder="Nickname..." style="width:80%; padding:10px; margin-bottom:10px;">
+                <button class="btn-green" onclick="registerUser()">ENTRA</button>
+                <p class="privacy-note">
+                    🔒 <b>Privacy Garantita:</b> La tua posizione non viene registrata. <br>
+                    Tutti i dati verranno <b>automaticamente cancellati</b> allo scadere del timer.
+                </p>
             </div>
-
             <div id="profile-section" class="hidden">
-                <div class="card">
-                    <h3 id="user-display-name"></h3>
-                    <button class="btn-green" onclick="showBigQR()">Mostra il mio QR 📱</button>
-                    <button class="btn-share" onclick="shareWA()">Invita su WhatsApp 💬</button>
-                </div>
+                <h3 id="user-name"></h3>
+                <p>Sei visibile sul radar!</p>
+            </div>
+            <div id="end-message" class="hidden">
+                <h2>GIOCO CONCLUSO</h2>
+                <p>Tutti i profili e i dati geografici sono stati eliminati permanentemente dal sistema.</p>
             </div>
         </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const socket = io();
-        let map, userMarker;
-        let markers = {};
-
-        // Inizializza Mappa
-        map = L.map('map').setView([45.4642, 9.1900], 15);
+        let map = L.map('map').setView([45.4642, 9.1900], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         function registerUser() {
             const nick = document.getElementById('nickname').value;
             navigator.geolocation.getCurrentPosition(pos => {
-                const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                socket.emit('registerUser', { nick, ...coords });
-                map.setView([coords.lat, coords.lng], 16);
-            }, () => alert("Attiva il GPS per giocare!"));
-        }
-
-        socket.on('profileCreated', (data) => {
-            document.getElementById('reg-section').classList.add('hidden');
-            document.getElementById('profile-section').classList.remove('hidden');
-            document.getElementById('user-display-name').innerText = data.user.nick;
-            QRCode.toCanvas(document.getElementById('big-qr'), window.location.origin + "/?target=" + socket.id, { width: 300 });
-        });
-
-        socket.on('updateMap', (users) => {
-            Object.values(users).forEach(u => {
-                if (markers[u.id]) markers[u.id].setLatLng([u.lat, u.lng]);
-                else markers[u.id] = L.marker([u.lat, u.lng]).addTo(map).bindPopup(u.nick);
+                socket.emit('registerUser', { nick, lat: pos.coords.latitude, lng: pos.coords.longitude });
+                document.getElementById('reg-section').classList.add('hidden');
+                document.getElementById('profile-section').classList.remove('hidden');
             });
-        });
-
-        function showBigQR() { document.getElementById('qr-overlay').style.display = 'flex'; }
-
-        function shareWA() {
-            const text = encodeURIComponent("Entra nel radar Viral QR! Guarda quanto piaci: " + window.location.origin);
-            window.open("https://wa.me/?text=" + text);
         }
+
+        socket.on('gameDeleted', () => {
+            document.getElementById('profile-section').classList.add('hidden');
+            document.getElementById('end-message').classList.remove('hidden');
+            document.getElementById('map').style.display = 'none';
+        });
 
         socket.on('timerStarted', data => {
-            document.getElementById('event-name').innerText = data.name;
-            // Logica timer...
+            document.getElementById('event-title').innerText = data.name;
+            // Funzione timer...
         });
     </script>
 </body>
