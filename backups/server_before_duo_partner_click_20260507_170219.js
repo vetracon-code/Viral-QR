@@ -26,9 +26,7 @@ let gameState = {
   startedAt: null,
   endTime: null,
   active: false,
-  users: {},
-  duos: {},
-  duoInvites: {}
+  users: {}
 };
 
 function distanceMeters(a, b) {
@@ -251,129 +249,6 @@ io.on('connection', socket => {
     });
   });
 
-
-  socket.on('duoInvite', data => {
-    const sender = gameState.users[socket.id];
-    const targetId = data && data.to;
-    const target = gameState.users[targetId];
-
-    if (!sender) {
-      socket.emit('duoError', { message: 'Devi prima entrare nel gioco.' });
-      return;
-    }
-
-    if (!target || !targetId) {
-      socket.emit('duoError', { message: 'Partecipante non disponibile.' });
-      return;
-    }
-
-    if (sender.outsideArea || target.outsideArea) {
-      socket.emit('duoError', { message: 'Per creare un Duo dovete essere entrambi nell\'area di gioco.' });
-      return;
-    }
-
-    if (sender.duoId || target.duoId) {
-      socket.emit('duoError', { message: 'Uno dei due è già in un Duo.' });
-      return;
-    }
-
-    const inviteId = `${socket.id}_${targetId}_${Date.now()}`;
-
-    gameState.duoInvites[inviteId] = {
-      id: inviteId,
-      from: socket.id,
-      to: targetId,
-      createdAt: Date.now()
-    };
-
-    const targetSocket = io.sockets.sockets.get(targetId);
-    if (targetSocket) {
-      targetSocket.emit('duoInviteReceived', {
-        inviteId,
-        from: socket.id,
-        fromNick: sender.nick
-      });
-    }
-  });
-
-  socket.on('duoAccept', data => {
-    const inviteId = data && data.inviteId;
-    const invite = gameState.duoInvites[inviteId];
-
-    if (!invite || invite.to !== socket.id) {
-      socket.emit('duoError', { message: 'Invito Duo non valido o scaduto.' });
-      return;
-    }
-
-    const fromUser = gameState.users[invite.from];
-    const toUser = gameState.users[invite.to];
-
-    if (!fromUser || !toUser) {
-      socket.emit('duoError', { message: 'Uno dei partecipanti non è più disponibile.' });
-      delete gameState.duoInvites[inviteId];
-      return;
-    }
-
-    if (fromUser.duoId || toUser.duoId) {
-      socket.emit('duoError', { message: 'Uno dei due è già in un Duo.' });
-      delete gameState.duoInvites[inviteId];
-      return;
-    }
-
-    const duoId = `duo_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
-
-    gameState.duos[duoId] = {
-      id: duoId,
-      members: [invite.from, invite.to],
-      createdAt: Date.now()
-    };
-
-    fromUser.duoId = duoId;
-    toUser.duoId = duoId;
-
-    delete gameState.duoInvites[inviteId];
-
-    const fromSocket = io.sockets.sockets.get(invite.from);
-    const toSocket = io.sockets.sockets.get(invite.to);
-
-    if (fromSocket) {
-      fromSocket.emit('duoCreated', {
-        duoId,
-        partnerId: toUser.id,
-        partnerNick: toUser.nick
-      });
-    }
-
-    if (toSocket) {
-      toSocket.emit('duoCreated', {
-        duoId,
-        partnerId: fromUser.id,
-        partnerNick: fromUser.nick
-      });
-    }
-
-    broadcastMap();
-  });
-
-  socket.on('duoDecline', data => {
-    const inviteId = data && data.inviteId;
-    const invite = gameState.duoInvites[inviteId];
-
-    if (!invite || invite.to !== socket.id) return;
-
-    const decliningUser = gameState.users[socket.id];
-    const fromSocket = io.sockets.sockets.get(invite.from);
-
-    if (fromSocket) {
-      fromSocket.emit('duoDeclinedNotice', {
-        nick: decliningUser ? decliningUser.nick : 'Il partecipante'
-      });
-    }
-
-    delete gameState.duoInvites[inviteId];
-  });
-
-
   socket.on('adminRequestReset', () => {
     gameState = {
       name: 'Lumina Live',
@@ -382,38 +257,13 @@ io.on('connection', socket => {
       startedAt: null,
       endTime: null,
       active: false,
-      users: {},
-      duos: {},
-      duoInvites: {}
+      users: {}
     };
 
     io.emit('gameDeleted');
   });
 
   socket.on('disconnect', () => {
-    const user = gameState.users[socket.id];
-
-    if (user && user.duoId && gameState.duos[user.duoId]) {
-      const duo = gameState.duos[user.duoId];
-      const partnerId = duo.members.find(id => id !== socket.id);
-      const partner = gameState.users[partnerId];
-
-      if (partner) {
-        delete partner.duoId;
-        const partnerSocket = io.sockets.sockets.get(partnerId);
-        if (partnerSocket) {
-          partnerSocket.emit('duoCreated', null);
-        }
-      }
-
-      delete gameState.duos[user.duoId];
-    }
-
-    Object.keys(gameState.duoInvites || {}).forEach(inviteId => {
-      const inv = gameState.duoInvites[inviteId];
-      if (inv.from === socket.id || inv.to === socket.id) delete gameState.duoInvites[inviteId];
-    });
-
     delete gameState.users[socket.id];
     broadcastMap();
   });

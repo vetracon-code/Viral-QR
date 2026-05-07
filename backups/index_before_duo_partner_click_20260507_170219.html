@@ -723,68 +723,6 @@
       }
     }
 
-  
-    .duo-status {
-      margin: 10px auto 2px auto;
-      max-width: 360px;
-      background: #fff7dc;
-      border: 1px solid rgba(212,175,55,.55);
-      border-radius: 999px;
-      padding: 8px 12px;
-      color: #1A237E;
-      font-size: .84rem;
-      font-weight: 900;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-
-    .duo-status button {
-      border: none;
-      background: transparent;
-      color: #1A237E;
-      font-weight: 950;
-      text-decoration: underline;
-      cursor: pointer;
-      padding: 0;
-      font-size: .84rem;
-    }
-
-    #duo-request {
-      position: fixed;
-      left: 14px;
-      right: 14px;
-      bottom: 14px;
-      z-index: 10040;
-      background: white;
-      border: 1px solid rgba(212,175,55,.65);
-      border-radius: 18px;
-      padding: 14px;
-      box-shadow: 0 8px 28px rgba(0,0,0,.25);
-      display: none;
-      text-align: left;
-    }
-
-    #duo-request strong {
-      display: block;
-      color: #1A237E;
-      margin-bottom: 5px;
-      font-size: .95rem;
-    }
-
-    .duo-request-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    .map-popup-btn.duo {
-      background: #1A237E;
-      margin-top: 7px;
-    }
-
   </style>
 </head>
 
@@ -841,15 +779,6 @@
   </div>
 
   <div id="geo-warning" class="hidden"></div>
-
-  <div id="duo-request">
-    <strong id="duo-request-title">Richiesta Duo</strong>
-    <div id="duo-request-text"></div>
-    <div class="duo-request-actions">
-      <button class="btn btn-gold" onclick="acceptDuoInvite()">ACCETTA</button>
-      <button class="btn" style="background:#666;" onclick="declineDuoInvite()">NON ORA</button>
-    </div>
-  </div>
 
   <div class="header">
     <h2 id="display-title">LUMINA LIVE</h2>
@@ -1098,7 +1027,6 @@
 
       <div class="player-profile">
         <h3 id="user-hello" style="margin:0;"></h3>
-        <div id="duo-status" class="duo-status"></div>
 
         <div class="presence-title">La tua presenza</div>
 
@@ -1926,33 +1854,6 @@
       }
     });
 
-
-    socket.on('duoInviteReceived', d => {
-      pendingDuoInvite = d;
-
-      document.getElementById('duo-request-title').innerText = 'Richiesta Duo';
-      document.getElementById('duo-request-text').innerText =
-        `${d.fromNick || 'Un partecipante'} vuole creare un Duo Lumina con te. Se accetti, apparirete collegati nel gioco.`;
-
-      document.getElementById('duo-request').style.display = 'block';
-      playNotificationSound();
-      flashNewArrival();
-    });
-
-    socket.on('duoCreated', d => {
-      updateDuoStatus(d);
-      alert('Duo creato con ' + (d.partnerNick || 'il partner') + '.');
-    });
-
-    socket.on('duoDeclinedNotice', d => {
-      alert((d && d.nick ? d.nick : 'Il partecipante') + ' ha scelto: non ora.');
-    });
-
-    socket.on('duoError', d => {
-      alert((d && d.message) ? d.message : 'Operazione Duo non riuscita.');
-    });
-
-
     socket.on('profileCreated', d => {
       myId = d.id;
 
@@ -2064,7 +1965,7 @@
           ? `${avatarHtml}<div class="map-popup-name">${u.nick || 'Io'}</div><div class="map-popup-self">${isOutside ? 'Fuori area' : 'Sei tu'}</div>`
           : isOutside
             ? `${avatarHtml}<div class="map-popup-name">${u.nick || 'Utente'}</div><div class="map-popup-status">Fuori area: temporaneamente non attivo</div>`
-            : `${avatarHtml}<div class="map-popup-name">${u.nick || 'Utente'}</div><button class="map-popup-btn" onclick="prepareInteractionWith('${u.id}', '${safeNick}')">Invia gradimento</button><button class="map-popup-btn duo" onclick="inviteDuo('${u.id}', '${safeNick}')">Crea Duo</button>`;
+            : `${avatarHtml}<div class="map-popup-name">${u.nick || 'Utente'}</div><button class="map-popup-btn" onclick="prepareInteractionWith('${u.id}', '${safeNick}')">Invia gradimento</button>`;
 
         if (markers[u.id]) {
           markers[u.id].setLatLng([u.lat, u.lng]);
@@ -2098,63 +1999,6 @@
         setTimeout(() => map.invalidateSize(true), 300);
       }
     });
-
-
-    function inviteDuo(targetId, targetNick) {
-      if (!myId) {
-        alert('Devi prima entrare nel gioco.');
-        return;
-      }
-
-      if (!targetId || targetId === myId) {
-        alert('Scegli un altro partecipante.');
-        return;
-      }
-
-      socket.emit('duoInvite', {
-        to: targetId
-      });
-
-      alert('Invito Duo inviato a ' + (targetNick || 'utente') + '.');
-    }
-
-    function acceptDuoInvite() {
-      if (!pendingDuoInvite) return;
-
-      socket.emit('duoAccept', {
-        inviteId: pendingDuoInvite.inviteId
-      });
-
-      document.getElementById('duo-request').style.display = 'none';
-    }
-
-    function declineDuoInvite() {
-      if (pendingDuoInvite) {
-        socket.emit('duoDecline', {
-          inviteId: pendingDuoInvite.inviteId
-        });
-      }
-
-      pendingDuoInvite = null;
-      document.getElementById('duo-request').style.display = 'none';
-    }
-
-    function updateDuoStatus(duo) {
-      currentDuo = duo || null;
-
-      const box = document.getElementById('duo-status');
-      if (!box) return;
-
-      if (!duo || !duo.partnerId) {
-        box.style.display = 'none';
-        box.innerHTML = '';
-        return;
-      }
-
-      box.style.display = 'flex';
-      box.innerHTML = `In Duo con <button onclick="prepareInteractionWith('${duo.partnerId}', '${String(duo.partnerNick || 'partner').replace(/'/g, "\\'")}')">${duo.partnerNick || 'partner'}</button>`;
-    }
-
 
     function prepareInteractionWith(id, nick) {
       if (!id) {
