@@ -175,6 +175,36 @@
             margin-top: 4px;
         }
 
+    
+        #geo-warning {
+            position: fixed;
+            left: 14px;
+            right: 14px;
+            bottom: 14px;
+            z-index: 10000;
+            background: #fff3cd;
+            border: 1px solid #ffda6a;
+            color: #5a4300;
+            padding: 12px 14px;
+            border-radius: 14px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+            text-align: left;
+        }
+        #geo-warning strong {
+            display: block;
+            margin-bottom: 4px;
+            color: #8a5b00;
+        }
+        .map-popup-status {
+            font-size: 0.75rem;
+            text-align: center;
+            margin-top: 5px;
+            color: #C62828;
+            font-weight: 800;
+        }
+
     </style>
 </head>
 <body>
@@ -199,6 +229,8 @@
         <button class="btn" style="background:#666; margin-top:20px;" onclick="closeOverlay()">CHIUDI</button>
     </div>
 
+    <div id="geo-warning" class="hidden"></div>
+
     <div class="header">
         <h2 id="display-title" style="margin:0; font-size: 1.1rem;">LUMINA</h2>
     </div>
@@ -219,6 +251,17 @@
                     <select id="adm-duration-unit">
                         <option value="min">minuti</option>
                         <option value="hour">ore</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="admin-field">
+                <label>Raggio area gioco</label>
+                <div class="admin-row">
+                    <input type="number" id="adm-radius-value" min="20" step="10" value="150">
+                    <select id="adm-radius-unit">
+                        <option value="m">metri</option>
+                        <option value="km">km</option>
                     </select>
                 </div>
             </div>
@@ -293,14 +336,66 @@
         let timerInterval = null;
         let currentGameEndTime = null;
         let currentGameCenter = null;
+        let currentGameRadius = 150;
+        let eventCircle = null;
+        let myGeoWatchId = null;
         let pendingTargetFromUrl = new URLSearchParams(window.location.search).get("target");
 
         const map = L.map('map', { zoomControl: true }).setView([45.4642, 9.19], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         map.zoomControl.setPosition('bottomright');
 
+        function drawEventCircle() {
+            if (!currentGameCenter || !currentGameCenter.lat || !currentGameCenter.lng) return;
+
+            if (eventCircle) {
+                map.removeLayer(eventCircle);
+                eventCircle = null;
+            }
+
+            eventCircle = L.circle([currentGameCenter.lat, currentGameCenter.lng], {
+                radius: currentGameRadius || 150,
+                weight: 2,
+                opacity: 0.9,
+                fillOpacity: 0.08
+            }).addTo(map);
+        }
+
+        function showGeoWarning(message) {
+            const box = document.getElementById('geo-warning');
+            if (!box) return;
+            box.innerHTML = `<strong>Sei fuori dall'area di gioco</strong>${message}`;
+            box.classList.remove('hidden');
+        }
+
+        function hideGeoWarning() {
+            const box = document.getElementById('geo-warning');
+            if (!box) return;
+            box.classList.add('hidden');
+        }
+
+        function startPositionWatch() {
+            if (!navigator.geolocation || myGeoWatchId) return;
+
+            myGeoWatchId = navigator.geolocation.watchPosition(p => {
+                if (!myId) return;
+
+                socket.emit('updatePosition', {
+                    lat: p.coords.latitude,
+                    lng: p.coords.longitude
+                });
+            }, () => {
+                console.warn("Posizione non aggiornata.");
+            }, {
+                enableHighAccuracy: true,
+                maximumAge: 10000,
+                timeout: 10000
+            });
+        }
+
         function centerMapOnEvent(zoom = 16) {
             if (!currentGameCenter || !currentGameCenter.lat || !currentGameCenter.lng) return;
+            drawEventCircle();
 
             setTimeout(() => {
                 map.invalidateSize(true);
@@ -356,6 +451,7 @@
             if (state && state.endTime) {
                 startGameTimer(state.endTime);
             }
+            if (state && state.radiusMeters) currentGameRadius = state.radiusMeters;
             if (state && state.center) {
                 currentGameCenter = state.center;
                 centerMapOnEvent(16);
@@ -365,6 +461,7 @@
         socket.on('timerStarted', d => {
             if (d && d.name) document.getElementById('display-title').innerText = d.name;
             if (d && d.endTime) startGameTimer(d.endTime);
+            if (d && d.radiusMeters) currentGameRadius = d.radiusMeters;
             if (d && d.center) {
                 currentGameCenter = d.center;
                 centerMapOnEvent(16);
@@ -408,6 +505,13 @@
             return { value: Math.max(1, value), unit };
         }
 
+        function getRadiusSettings() {
+            const value = parseFloat(document.getElementById('adm-radius-value').value) || 150;
+            const unit = document.getElementById('adm-radius-unit').value || 'm';
+            const meters = unit === 'km' ? value * 1000 : value;
+            return Math.max(20, Math.round(meters));
+        }
+
         async function activateArea() {
             const name = document.getElementById('adm-event-name').value.trim() || "Lumina";
             const duration = getDurationSettings();
@@ -418,6 +522,7 @@
                         name,
                         value: duration.value,
                         unit: duration.unit,
+                        radiusMeters: getRadiusSettings(),
                         lat: p.coords.latitude,
                         lng: p.coords.longitude
                     });
@@ -453,6 +558,7 @@
                     name,
                     value: duration.value,
                     unit: duration.unit,
+                    radiusMeters: getRadiusSettings(),
                     lat: confirmedAddressLocation.lat,
                     lng: confirmedAddressLocation.lng
                 });
@@ -487,6 +593,7 @@
             if (currentGameEndTime) startGameTimer(currentGameEndTime);
             if(window.location.search.includes('admin')) document.getElementById('admin-powers').classList.remove('hidden');
             renderPersonalQr();
+            startPositionWatch();
 
             if (pendingTargetFromUrl && pendingTargetFromUrl !== myId) {
                 prepareInteractionWith(pendingTargetFromUrl, "utente selezionato");
@@ -634,13 +741,17 @@
 
                 if (markers[u.id]) {
                     markers[u.id].setLatLng([u.lat, u.lng]);
+                    markers[u.id].setStyle({
+                        opacity: isOutside ? 0.45 : 1,
+                        fillOpacity: isOutside ? 0.25 : 0.85
+                    });
                     markers[u.id].setPopupContent(popupHtml);
                 } else {
                     const marker = L.circleMarker([u.lat, u.lng], {
                         radius: isMe ? 9 : 8,
                         weight: 3,
-                        opacity: 1,
-                        fillOpacity: 0.85
+                        opacity: isOutside ? 0.45 : 1,
+                        fillOpacity: isOutside ? 0.25 : 0.85
                     }).addTo(map).bindPopup(popupHtml);
 
                     marker.__userId = u.id;
@@ -676,6 +787,20 @@
         }
 
         function resetAll() { if(confirm("RESET?")) socket.emit('adminRequestReset'); }
+        socket.on('outsideAreaWarning', d => {
+            const seconds = d && d.graceSeconds ? d.graceSeconds : 120;
+            showGeoWarning(`Sei uscito dal raggio dell'evento. Rimani visibile per circa ${Math.ceil(seconds / 60)} minuti: se rientri nell'area, torni automaticamente attivo.`);
+        });
+
+        socket.on('backInsideArea', () => {
+            hideGeoWarning();
+        });
+
+        socket.on('removedOutsideArea', () => {
+            alert("Sei rimasto fuori dall'area di gioco troppo a lungo. Sei stato rimosso dalla sessione.");
+            location.reload();
+        });
+
         socket.on('gameDeleted', () => location.href = window.location.origin + (window.location.search.includes('admin') ? "?admin=1" : ""));
     </script>
 </body>
