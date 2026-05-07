@@ -3,201 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viral QR | Exclusive Social Experience</title>
+    <title>Lumina - Scopri chi ti circonda</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root {
-            --accent: #00ffa3;
-            --bg-dark: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --text-main: #f8fafc;
+        :root { 
+            --accent: #D4AF37; 
+            --primary: #1A237E; 
+            --bg: #FFFFFF; 
+            --text: #212121;
+            --danger: #C62828;
         }
-        
-        body { 
-            font-family: 'Inter', -apple-system, sans-serif; 
-            margin: 0; 
-            background-color: var(--bg-dark); 
-            color: var(--text-main);
-            display: flex;
-            justify-content: center;
-        }
-
-        .app-container {
-            width: 100%;
-            max-width: 450px;
-            min-height: 100vh;
-            background: radial-gradient(circle at top right, #1e293b, #0f172a);
-            position: relative;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
-        }
-
-        .header {
-            padding: 25px 15px;
-            text-align: center;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .header h2 {
-            margin: 0;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            font-size: 1.2rem;
-            background: linear-gradient(to right, #fff, var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        #timer-display {
-            font-family: 'Courier New', monospace;
-            font-size: 1.5rem;
-            color: var(--accent);
-            margin-top: 10px;
-            text-shadow: 0 0 10px rgba(0, 255, 163, 0.5);
-        }
-
-        #map { 
-            height: 350px; 
-            width: 100%; 
-            filter: invert(100%) hue-rotate(180deg) brightness(0.8) contrast(1.2);
-            opacity: 0.9;
-        }
-
-        .content { padding: 20px; }
-
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 25px;
-            border-radius: 24px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-
-        h3 { font-weight: 300; letter-spacing: 1px; }
-
-        input, select {
-            background: rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: white;
-            padding: 15px;
-            width: 100%;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            box-sizing: border-box;
-            transition: all 0.3s;
-        }
-
-        input:focus {
-            border-color: var(--accent);
-            outline: none;
-            box-shadow: 0 0 10px rgba(0, 255, 163, 0.2);
-        }
-
-        .btn {
-            background: linear-gradient(135deg, var(--accent), #00d1ff);
-            color: #000;
-            border: none;
-            padding: 16px;
-            width: 100%;
-            border-radius: 14px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .btn:active { transform: scale(0.98); }
-
-        .btn-secondary {
-            background: transparent;
-            border: 1px solid var(--accent);
-            color: var(--accent);
-        }
-
-        /* Overlay Premium */
-        #qr-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.95);
-            z-index: 2000;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(20px);
-        }
-
-        #big-qr {
-            background: white;
-            padding: 20px;
-            border-radius: 20px;
-            box-shadow: 0 0 40px var(--accent);
-        }
-
-        .admin-box {
-            background: rgba(0, 255, 163, 0.05);
-            border: 1px solid var(--accent);
-            padding: 20px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-        }
-
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin:0; background: #F8F9FA; color: var(--text); }
+        .header { background: var(--primary); color: white; padding: 25px 15px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .header h2 { margin: 0; text-transform: uppercase; letter-spacing: 4px; font-weight: 300; font-size: 1.8rem; }
+        .header p { margin: 8px 0 0 0; font-size: 0.85rem; letter-spacing: 1px; opacity: 0.9; font-weight: 300; text-transform: lowercase; font-variant: small-caps; }
+        #map { height: 380px; width: 100%; border-bottom: 1px solid #E0E0E0; }
+        .content { padding: 20px; max-width: 480px; margin: auto; }
+        .card { background: white; padding: 25px; border-radius: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.05); }
+        .btn { background: var(--accent); color: white; border: none; padding: 16px; width: 100%; border-radius: 35px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3); margin-bottom: 10px; }
+        .admin-box { background: #F0F2F5; color: var(--primary); padding: 25px; border-radius: 20px; margin-bottom: 20px; text-align: left; }
         .hidden { display: none; }
+        input, select { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 12px; border: 1px solid #DDE1E7; font-size: 1rem; box-sizing: border-box; }
+        #qr-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.98); z-index:2000; display:none; flex-direction:column; align-items:center; justify-content:center; backdrop-filter: blur(10px); }
     </style>
 </head>
 <body>
     <div id="qr-overlay" onclick="this.style.display='none'">
-        <h2 style="margin-bottom:30px">YOUR PASS</h2>
-        <div id="big-qr"></div>
-        <p style="margin-top:40px; opacity:0.5">Tocca per chiudere</p>
+        <h2 style="color:var(--primary); font-weight: 300;">IL TUO PROFILO LUMINA</h2>
+        <div id="big-qr" style="padding: 20px; background: white; border-radius: 20px;"></div>
+        <p style="color:#888; margin-top:30px;">Tocca ovunque per chiudere</p>
     </div>
 
-    <div class="app-container">
-        <div class="header">
-            <h2 id="event-title">Viral Radar</h2>
-            <div id="timer-display">SYNCING...</div>
+    <div class="header">
+        <h2 id="display-title">Lumina</h2>
+        <p>scopri chi ti circonda</p>
+        <div id="timer-display" style="font-size: 1.2rem; margin-top: 15px; color: var(--accent);">...</div>
+    </div>
+    
+    <div id="map"></div>
+
+    <div class="content">
+        <div id="admin-section" class="admin-box hidden">
+            <h3 style="margin-bottom: 20px;">Configurazione Area</h3>
+            <input type="text" id="adm-event-name" placeholder="Nome dell'Evento">
+            <input type="text" id="adm-address" placeholder="Indirizzo centro area">
+            <input type="text" id="adm-nick" placeholder="Tuo Nickname">
+            <div style="display:flex; gap:12px;">
+                <input type="number" id="adm-val" value="60" style="width:50%">
+                <select id="adm-unit" style="width:50%"><option value="min">Minuti</option><option value="ore">Ore</option></select>
+            </div>
+            <button class="btn" style="background:var(--primary)" onclick="adminStartAndJoin()">CREA AREA LUMINA</button>
         </div>
-        
-        <div id="map"></div>
 
-        <div class="content">
-            <div id="admin-section" class="admin-box hidden">
-                <h4 style="margin:0 0 15px 0; color:var(--accent)">ADMIN CONSOLE</h4>
-                <input type="text" id="adm-event-name" placeholder="Nome dell'Evento Premium">
-                <input type="text" id="adm-address" placeholder="Location (Indirizzo)">
-                <input type="text" id="adm-nick" placeholder="Tuo Nickname">
-                <div style="display:flex; gap:10px;">
-                    <input type="number" id="adm-val" value="60">
-                    <select id="adm-unit"><option value="min">Minuti</option><option value="ore">Ore</option></select>
-                </div>
-                <button class="btn" onclick="adminStartAndJoin()">START PRIVATE GAME</button>
+        <div id="reg-section">
+            <div class="card">
+                <h3 style="font-weight: 400; color: var(--primary);">Benvenuto</h3>
+                <input type="text" id="nickname" placeholder="Il tuo Nickname">
+                <button class="btn" onclick="registerUser()">ENTRA NELL'AREA</button>
             </div>
+        </div>
 
-            <div id="reg-section">
-                <div class="card">
-                    <h3>Private Access</h3>
-                    <p style="opacity:0.6; font-size:0.8rem; margin-bottom:20px">Inserisci un nickname per apparire nel radar.</p>
-                    <input type="text" id="nickname" placeholder="Username">
-                    <button class="btn" onclick="registerUser()">ENTRA NEL GIOCO</button>
-                </div>
-            </div>
-
-            <div id="profile-section" class="hidden">
-                <div class="card">
-                    <h2 id="user-display-name" style="margin-top:0"></h2>
-                    <p style="color:var(--accent)">ONLINE</p>
-                    <button class="btn" onclick="showBigQR()" style="margin-top:10px">MY QR PASS 📱</button>
-                    <button class="btn btn-secondary" onclick="shareWA()" style="margin-top:10px">INVITE FRIENDS 💬</button>
-                    
-                    <button id="admin-reset-btn" class="btn hidden" style="background:#ef4444; margin-top:40px; color:white;" onclick="triggerFullReset()">CLOSE SESSION</button>
-                </div>
+        <div id="profile-section" class="hidden">
+            <div class="card">
+                <h3 id="user-display-name" style="color:var(--primary); margin-bottom: 20px;"></h3>
+                <button class="btn" onclick="showBigQR()">MOSTRA IL MIO QR</button>
+                <button class="btn" style="background:#455A64" onclick="shareWA()">INVITA AMICI</button>
+                <button id="admin-reset-btn" class="btn hidden" style="background:var(--danger); margin-top:30px; font-size: 0.8rem;" onclick="triggerFullReset()">TERMINA EVENTO PER TUTTI</button>
             </div>
         </div>
     </div>
@@ -207,12 +78,10 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const socket = io();
-        let map, myMarker, isAdmin = false;
-        let otherMarkers = {};
+        let map, myMarker, isAdmin = false, otherMarkers = {};
 
-        // Mappa stile Dark
         map = L.map('map', { zoomControl: false }).setView([45.4642, 9.1900], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        L.tileLayer('https://{s}.tile.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
         if (new URLSearchParams(window.location.search).has('admin')) {
             isAdmin = true;
@@ -224,76 +93,61 @@
             const address = document.getElementById('adm-address').value;
             let lat, lng;
             if (address) {
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
-                const data = await response.json();
-                if (data.length > 0) { lat = parseFloat(data[0].lat); lng = parseFloat(data[0].lon); }
+                const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+                const d = await r.json();
+                if (d.length > 0) { lat = parseFloat(d[0].lat); lng = parseFloat(d[0].lon); }
             }
             if (!lat) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    executeStart(pos.coords.latitude, pos.coords.longitude);
-                });
-            } else { executeStart(lat, lng); }
+                navigator.geolocation.getCurrentPosition(p => execute(p.coords.latitude, p.coords.longitude));
+            } else execute(lat, lng);
         }
 
-        function executeStart(lat, lng) {
-            socket.emit('adminStart', { 
-                name: document.getElementById('adm-event-name').value || "Exclusive Event", 
-                value: document.getElementById('adm-val').value, 
-                unit: document.getElementById('adm-unit').value,
-                lat: lat, lng: lng 
-            });
-            socket.emit('registerUser', { nick: document.getElementById('adm-nick').value || "Owner", lat: lat, lng: lng });
+        function execute(lat, lng) {
+            const name = document.getElementById('adm-event-name').value || "Lumina Event";
+            socket.emit('adminStart', { name, value: document.getElementById('adm-val').value, unit: document.getElementById('adm-unit').value, lat, lng });
+            socket.emit('registerUser', { nick: document.getElementById('adm-nick').value || "Host", lat, lng });
             document.getElementById('admin-section').classList.add('hidden');
-            map.setView([lat, lng], 16);
+            map.setView([lat, lng], 17);
         }
 
         function registerUser() {
-            const nick = document.getElementById('nickname').value || "Guest";
-            navigator.geolocation.getCurrentPosition(pos => {
-                socket.emit('registerUser', { nick: nick, lat: pos.coords.latitude, lng: pos.coords.longitude });
+            navigator.geolocation.getCurrentPosition(p => {
+                socket.emit('registerUser', { nick: document.getElementById('nickname').value || "Guest", lat: p.coords.latitude, lng: p.coords.longitude });
                 document.getElementById('reg-section').classList.add('hidden');
-                map.setView([pos.coords.latitude, pos.coords.longitude], 16);
+                map.setView([p.coords.latitude, p.coords.longitude], 17);
             });
         }
 
-        socket.on('profileCreated', (data) => {
+        socket.on('profileCreated', d => {
             document.getElementById('profile-section').classList.remove('hidden');
-            document.getElementById('user-display-name').innerText = data.user.nick;
+            document.getElementById('user-display-name').innerText = d.user.nick;
             if(isAdmin) document.getElementById('admin-reset-btn').classList.remove('hidden');
             QRCode.toCanvas(document.getElementById('big-qr'), window.location.origin + "/?target=" + socket.id, { width: 250 });
+        });
+
+        socket.on('timerStarted', d => {
+            document.getElementById('display-title').innerText = d.name;
+            setInterval(() => {
+                const diff = d.endTime - Date.now();
+                if(diff <= 0) { document.getElementById('timer-display').innerText = "CONCLUSO"; return; }
+                const m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
+                document.getElementById('timer-display').innerText = m + ":" + (s<10?'0':'') + s;
+            }, 1000);
         });
 
         socket.on('updateMap', users => {
             Object.values(users).forEach(u => {
                 if(u.id !== socket.id) {
                     if(otherMarkers[u.id]) otherMarkers[u.id].setLatLng([u.lat, u.lng]);
-                    else {
-                        const icon = L.divIcon({
-                            className: 'custom-div-icon',
-                            html: `<div style="background-color:var(--accent); width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow: 0 0 10px var(--accent);"></div>`,
-                            iconSize: [12, 12]
-                        });
-                        otherMarkers[u.id] = L.marker([u.lat, u.lng], {icon: icon}).addTo(map).bindPopup(u.nick);
-                    }
+                    else otherMarkers[u.id] = L.marker([u.lat, u.lng]).addTo(map).bindPopup(u.nick);
                 }
             });
         });
 
-        socket.on('timerStarted', d => {
-            document.getElementById('event-title').innerText = d.name;
-            setInterval(() => {
-                const diff = d.endTime - Date.now();
-                if(diff <= 0) { document.getElementById('timer-display').innerText = "SESSION ENDED"; return; }
-                const m = Math.floor((diff%3600000)/60000);
-                const s = Math.floor((diff%60000)/1000);
-                document.getElementById('timer-display').innerText = m + ":" + (s < 10 ? '0' : '') + s;
-            }, 1000);
-        });
-
-        socket.on('gameDeleted', () => { location.href = window.location.origin + (isAdmin ? "?admin=1" : ""); });
-        function triggerFullReset() { if(confirm("Reset entire session?")) socket.emit('adminRequestReset'); }
+        function triggerFullReset() { if(confirm("Terminare l'area?")) socket.emit('adminRequestReset'); }
+        socket.on('gameDeleted', () => location.href = window.location.origin + (isAdmin ? "?admin=1" : ""));
         function showBigQR() { document.getElementById('qr-overlay').style.display = 'flex'; }
-        function shareWA() { window.open("https://wa.me/?text=" + encodeURIComponent("Join the exclusive radar: " + window.location.origin)); }
+        function shareWA() { window.open("https://wa.me/?text=" + encodeURIComponent("Unisciti a me su Lumina: " + window.location.origin)); }
     </script>
 </body>
 </html>
