@@ -12,11 +12,61 @@
         
         /* Dashboard Layout */
         .player-profile { padding: 20px; background: white; border-bottom: 3px solid var(--accent); }
-        .qr-wrapper { position: relative; display: inline-block; margin: 20px 0; background: white; padding: 10px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        #qr-canvas { width: 180px !important; height: 180px !important; }
+        .qr-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 24px 0;
+            background: white;
+            padding: 18px;
+            border-radius: 24px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            min-width: 190px;
+            min-height: 190px;
+            overflow: visible;
+        }
+        #qr-canvas {
+            display: block;
+            width: 180px !important;
+            height: 180px !important;
+            background: white;
+            position: relative;
+            z-index: 2;
+        }
+        #qr-fallback {
+            display: none;
+            width: 180px;
+            min-height: 180px;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #1A237E;
+            border: 1px dashed #D4AF37;
+            border-radius: 16px;
+            padding: 12px;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 2;
+        }
         
         /* Like Stats attorno al QR */
-        .stat-badge { position: absolute; background: white; border: 1px solid #ddd; border-radius: 50px; padding: 5px 12px; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .stat-badge {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 50px;
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 5;
+        }
         .s-tl { top: -10px; left: -30px; }
         .s-tr { top: -10px; right: -30px; }
         .s-ml { top: 82px; left: -42px; }
@@ -362,8 +412,53 @@
             document.getElementById('user-hello').innerText = d.user.nick;
             if (currentGameEndTime) startGameTimer(currentGameEndTime);
             if(window.location.search.includes('admin')) document.getElementById('admin-powers').classList.remove('hidden');
-            QRCode.toCanvas(document.getElementById('qr-canvas'), window.location.origin + "/?target=" + myId);
+            renderPersonalQr();
         });
+
+        function renderPersonalQr() {
+            const canvas = document.getElementById('qr-canvas');
+            const fallback = document.getElementById('qr-fallback');
+            const qrUrl = window.location.origin + "/?target=" + myId;
+
+            if (!canvas || !myId) {
+                if (fallback) {
+                    fallback.style.display = 'flex';
+                    fallback.innerHTML = "QR non disponibile.<br>ID giocatore mancante.";
+                }
+                return;
+            }
+
+            canvas.style.display = 'block';
+            if (fallback) fallback.style.display = 'none';
+
+            try {
+                if (!window.QRCode || !QRCode.toCanvas) {
+                    throw new Error("Libreria QRCode non caricata.");
+                }
+
+                QRCode.toCanvas(canvas, qrUrl, {
+                    width: 180,
+                    margin: 1,
+                    errorCorrectionLevel: 'H'
+                }, function (error) {
+                    if (error) {
+                        console.error(error);
+                        canvas.style.display = 'none';
+                        if (fallback) {
+                            fallback.style.display = 'flex';
+                            fallback.innerHTML = "QR non generato.<br>Ricarica la pagina.";
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error(e);
+                canvas.style.display = 'none';
+                if (fallback) {
+                    fallback.style.display = 'flex';
+                    fallback.innerHTML = "QR non generato.<br>Libreria non caricata.";
+                }
+            }
+        }
 
         socket.on('receiveLike', d => {
             interactionsReceived.push(d);
