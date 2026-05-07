@@ -2011,8 +2011,6 @@
     }
 
     function showInviteQr() {
-      unlockNotificationAudio();
-
       const box = document.getElementById('invite-qr-box');
       const nick = document.getElementById('invite-nick');
 
@@ -2129,54 +2127,10 @@
       });
     }
 
-    function unlockNotificationAudio() {
-      try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-
-        if (!AudioContext) return;
-
-        if (!luminaAudioCtx) {
-          luminaAudioCtx = new AudioContext();
-        }
-
-        if (luminaAudioCtx.state === 'suspended') {
-          luminaAudioCtx.resume();
-        }
-
-        const oscillator = luminaAudioCtx.createOscillator();
-        const gain = luminaAudioCtx.createGain();
-
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(1, luminaAudioCtx.currentTime);
-        gain.gain.setValueAtTime(0.00001, luminaAudioCtx.currentTime);
-
-        oscillator.connect(gain);
-        gain.connect(luminaAudioCtx.destination);
-
-        oscillator.start();
-        oscillator.stop(luminaAudioCtx.currentTime + 0.03);
-
-        luminaAudioUnlocked = true;
-      } catch (e) {
-        console.warn('Audio unlock not available', e);
-      }
-    }
-
     function playNotificationSound() {
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
-
-        if (!AudioContext) return;
-
-        if (!luminaAudioCtx) {
-          luminaAudioCtx = new AudioContext();
-        }
-
-        if (luminaAudioCtx.state === 'suspended') {
-          luminaAudioCtx.resume();
-        }
-
-        const ctx = luminaAudioCtx;
+        const ctx = new AudioContext();
 
         const o1 = ctx.createOscillator();
         const g1 = ctx.createGain();
@@ -2235,8 +2189,6 @@
 
 
     function joinGame(type) {
-      unlockNotificationAudio();
-
       const nick = type === 'admin'
         ? document.getElementById('adm-nick').value.trim() || 'Admin'
         : document.getElementById('nickname').value.trim() || 'Player';
@@ -2530,8 +2482,6 @@
     }
 
     function startScanner() {
-      unlockNotificationAudio();
-
       document.getElementById('overlay').style.display = 'flex';
       document.getElementById('scanner-container').classList.remove('hidden');
 
@@ -2562,8 +2512,6 @@
     }
 
     function sendInteraction(type) {
-      unlockNotificationAudio();
-
       if (!currentTargetId) {
         alert('Prima scegli o scannerizza un utente.');
         return;
