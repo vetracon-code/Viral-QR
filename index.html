@@ -9,14 +9,13 @@
         :root { --ws-green: #25D366; --ws-dark: #075E54; --ws-bg: #f0f2f5; --danger: #d32f2f; }
         body { font-family: sans-serif; margin:0; background: var(--ws-bg); }
         .header { background: var(--ws-dark); color: white; padding: 15px; text-align: center; position: sticky; top:0; z-index:1000; }
-        #map { height: 300px; width: 100%; }
+        #map { height: 350px; width: 100%; }
         .content { padding: 15px; text-align: center; }
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
         .btn { background: var(--ws-green); color: white; border: none; padding: 12px; width: 100%; border-radius: 25px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
-        .btn-admin-reset { background: var(--danger); margin-top: 20px; font-size: 0.8rem; }
         .admin-box { background: #334155; color: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: left; }
         .hidden { display: none; }
-        input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
         #qr-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:2000; display:none; flex-direction:column; align-items:center; justify-content:center; }
     </style>
 </head>
@@ -36,19 +35,20 @@
 
     <div class="content">
         <div id="admin-section" class="admin-box hidden">
-            <h4>⚙️ Pannello Admin</h4>
+            <h4>⚙️ Configurazione Area (Solo Admin)</h4>
             <input type="text" id="adm-event-name" placeholder="Nome dell'Evento">
+            <input type="text" id="adm-address" placeholder="Indirizzo (es: Piazza Duomo, Milano)">
             <input type="text" id="adm-nick" placeholder="Tuo Nickname">
             <div style="display:flex; gap:10px;">
                 <input type="number" id="adm-val" value="60">
-                <select id="adm-unit" style="padding:10px; border-radius:8px;"><option value="min">Minuti</option><option value="ore">Ore</option></select>
+                <select id="adm-unit"><option value="min">Minuti</option><option value="ore">Ore</option></select>
             </div>
-            <button class="btn" style="background:#1e293b; border:1px solid white;" onclick="adminStartAndJoin()">AVVIA GIOCO ED ENTRA</button>
+            <button class="btn" style="background:#1e293b; border:1px solid white;" onclick="adminStartAndJoin()">FISSAGE AREA E AVVIA</button>
         </div>
 
         <div id="reg-section">
             <div class="card">
-                <h3>Partecipa in Anonimato</h3>
+                <h3>Partecipa al Gioco</h3>
                 <input type="text" id="nickname" placeholder="Scegli un Nickname">
                 <button class="btn" onclick="registerUser()">ENTRA NEL RADAR</button>
             </div>
@@ -59,8 +59,7 @@
                 <h3 id="user-display-name"></h3>
                 <button class="btn" onclick="showBigQR()">MOSTRA IL MIO QR 📱</button>
                 <button class="btn" style="background:#128C7E" onclick="shareWA()">INVITA SU WHATSAPP 💬</button>
-                
-                <button id="admin-reset-btn" class="btn btn-admin-reset hidden" onclick="triggerFullReset()">🛑 RESETTA E CHIUDI GIOCO (ADMIN)</button>
+                <button id="admin-reset-btn" class="btn hidden" style="background:var(--danger); margin-top:20px" onclick="triggerFullReset()">🛑 RESETTA TUTTO (ADMIN)</button>
             </div>
         </div>
     </div>
@@ -70,10 +69,10 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const socket = io();
-        let map, myMarker;
-        let isAdmin = false;
+        let map, myMarker, isAdmin = false;
+        let otherMarkers = {};
 
-        map = L.map('map').setView([0, 0], 2);
+        map = L.map('map').setView([45.4642, 9.1900], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         if (new URLSearchParams(window.location.search).has('admin')) {
@@ -82,22 +81,42 @@
             document.getElementById('reg-section').classList.add('hidden');
         }
 
-        function adminStartAndJoin() {
-            const eventName = document.getElementById('adm-event-name').value || "Evento Viral";
-            const nick = document.getElementById('adm-nick').value || "Admin";
-            const val = document.getElementById('adm-val').value;
-            const unit = document.getElementById('adm-unit').value;
-            socket.emit('adminStart', { name: eventName, value: val, unit: unit });
-            navigator.geolocation.getCurrentPosition(pos => {
-                socket.emit('registerUser', { nick: nick, lat: pos.coords.latitude, lng: pos.coords.longitude });
-                document.getElementById('admin-section').classList.add('hidden');
-            });
+        async function adminStartAndJoin() {
+            const address = document.getElementById('adm-address').value;
+            let lat, lng;
+
+            if (address) {
+                try {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+                    const data = await response.json();
+                    if (data.length > 0) {
+                        lat = parseFloat(data[0].lat);
+                        lng = parseFloat(data[0].lon);
+                    }
+                } catch(e) { console.error(e); }
+            }
+
+            if (!lat || !lng) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    executeStart(pos.coords.latitude, pos.coords.longitude);
+                }, () => alert("GPS necessario"));
+            } else {
+                executeStart(lat, lng);
+            }
         }
 
-        function triggerFullReset() {
-            if(confirm("Sei sicuro? Questo cancellerà tutti i dati di tutti i giocatori e tornerai alla schermata iniziale.")) {
-                socket.emit('adminRequestReset');
-            }
+        function executeStart(lat, lng) {
+            const eventName = document.getElementById('adm-event-name').value || "Evento Viral";
+            const nick = document.getElementById('adm-nick').value || "Admin";
+            socket.emit('adminStart', { 
+                name: eventName, 
+                value: document.getElementById('adm-val').value, 
+                unit: document.getElementById('adm-unit').value,
+                lat: lat, lng: lng 
+            });
+            socket.emit('registerUser', { nick: nick, lat: lat, lng: lng });
+            document.getElementById('admin-section').classList.add('hidden');
+            map.setView([lat, lng], 16);
         }
 
         function registerUser() {
@@ -105,6 +124,7 @@
             navigator.geolocation.getCurrentPosition(pos => {
                 socket.emit('registerUser', { nick: nick, lat: pos.coords.latitude, lng: pos.coords.longitude });
                 document.getElementById('reg-section').classList.add('hidden');
+                map.setView([pos.coords.latitude, pos.coords.longitude], 16);
             });
         }
 
@@ -115,12 +135,29 @@
             QRCode.toCanvas(document.getElementById('big-qr'), window.location.origin + "/?target=" + socket.id, { width: 280 });
         });
 
+        socket.on('updateMap', users => {
+            Object.values(users).forEach(u => {
+                if(u.id !== socket.id) {
+                    if(otherMarkers[u.id]) otherMarkers[u.id].setLatLng([u.lat, u.lng]);
+                    else otherMarkers[u.id] = L.marker([u.lat, u.lng]).addTo(map).bindPopup(u.nick);
+                }
+            });
+        });
+
+        function triggerFullReset() {
+            if(confirm("Sei sicuro di voler resettare il gioco per tutti?")) {
+                socket.emit('adminRequestReset');
+            }
+        }
+
         socket.on('gameDeleted', () => {
-            alert("Il gioco è stato resettato dall'amministratore.");
             location.href = window.location.origin + (isAdmin ? "?admin=1" : "");
         });
 
-        // Altre funzioni (updateMap, shareWA, etc) rimosse per brevità ma restano attive nel tuo codice
+        function showBigQR() { document.getElementById('qr-overlay').style.display = 'flex'; }
+        function shareWA() {
+            window.open("https://wa.me/?text=" + encodeURIComponent("Entra nel radar! " + window.location.origin));
+        }
     </script>
 </body>
 </html>
