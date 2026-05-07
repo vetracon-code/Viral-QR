@@ -1216,33 +1216,6 @@
       display: block;
     }
 
-  
-    .admin-emergency-box {
-      margin: 14px 0;
-      padding: 12px;
-      border-radius: 14px;
-      background: #fff7dc;
-      color: #5f4300;
-      font-size: .82rem;
-      line-height: 1.35;
-      font-weight: 800;
-      text-align: left;
-      border: 1px solid rgba(212,175,55,.45);
-    }
-
-    .admin-emergency-box strong {
-      display: block;
-      color: #1A237E;
-      margin-bottom: 5px;
-      font-size: .88rem;
-    }
-
-    .admin-emergency-actions {
-      display: grid;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
   </style>
 </head>
 
@@ -1395,16 +1368,6 @@
       <div id="address-confirm-box" class="hidden"></div>
 
       <button class="btn btn-gold" onclick="activateArea()">ATTIVA AREA GIOCO</button>
-
-      <div class="admin-emergency-box" id="admin-emergency-box">
-        <strong>Accesso Host / Admin</strong>
-        Se la posizione non viene riconosciuta o resta bloccata sulla conferma manuale, puoi procedere in modalità online senza raggio.
-        <div class="admin-emergency-actions">
-          <button class="btn" style="background:#1A237E;" onclick="activateOnlineSessionAndUnlockHost()">ATTIVA ONLINE E PROCEDI COME HOST</button>
-          <button class="btn" style="background:#475569;" onclick="unlockAdminJoinFlow()">MOSTRA LOGIN HOST</button>
-        </div>
-      </div>
-
 
       <div id="geo-admin-warning" class="geo-admin-warning">
         Posizione non disponibile o non autorizzata. Puoi riprovare concedendo la localizzazione, oppure attivare una sessione online senza raggio.
@@ -1852,88 +1815,6 @@
       if (inviteSection) inviteSection.classList.remove('hidden');
 
       alert('Sessione online attivata senza raggio. Gli utenti possono entrare dal link o dal QR anche se la posizione non è disponibile.');
-    }
-
-
-
-    function hideManualLocationBlocks() {
-      const possibleIds = [
-        'address-confirm-section',
-        'admin-address-confirm-section',
-        'manual-address-confirm-section',
-        'address-confirm-box',
-        'admin-address-box',
-        'confirmed-address-box',
-        'geo-admin-warning'
-      ];
-
-      possibleIds.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-          el.classList.add('hidden');
-          el.style.display = 'none';
-        }
-      });
-
-      document.querySelectorAll('[id*="address"], [id*="Address"], [id*="confirm"], [id*="Confirm"]').forEach(el => {
-        const txt = (el.innerText || '').toLowerCase();
-        if (
-          txt.includes('conferma') &&
-          (txt.includes('posizione') || txt.includes('indirizzo') || txt.includes('attiva'))
-        ) {
-          el.classList.add('hidden');
-          el.style.display = 'none';
-        }
-      });
-    }
-
-    function unlockAdminJoinFlow() {
-      hideManualLocationBlocks();
-
-      const joinSection = document.getElementById('admin-join-section');
-      const inviteSection = document.getElementById('admin-invite-section');
-
-      if (joinSection) {
-        joinSection.classList.remove('hidden');
-        joinSection.style.display = '';
-      }
-
-      if (inviteSection) {
-        inviteSection.classList.remove('hidden');
-        inviteSection.style.display = '';
-      }
-
-      const nick = document.getElementById('adm-nick');
-      if (nick) {
-        setTimeout(() => nick.focus(), 120);
-      }
-
-      alert('Accesso Host sbloccato. Ora puoi inserire il tuo nickname ed entrare nel gioco come Admin/Host.');
-    }
-
-    function activateOnlineSessionAndUnlockHost() {
-      const name =
-        document.getElementById('adm-event-name')?.value ||
-        document.getElementById('event-name')?.value ||
-        'Lumina Live';
-
-      const durationValue =
-        Number(document.getElementById('adm-duration-value')?.value || 60);
-
-      const durationUnit =
-        document.getElementById('adm-duration-unit')?.value || 'min';
-
-      socket.emit('adminStart', {
-        name,
-        value: Number.isFinite(durationValue) && durationValue > 0 ? durationValue : 60,
-        unit: durationUnit,
-        radiusDisabled: true,
-        radiusMeters: null,
-        lat: 45.4642,
-        lng: 9.19
-      });
-
-      unlockAdminJoinFlow();
     }
 
 
