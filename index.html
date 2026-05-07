@@ -1,47 +1,39 @@
 <!DOCTYPE html>
-<html>
+<html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Viral QR Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viral QR</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #121212; color: white; padding: 50px; }
-        #timer { font-size: 3em; color: #ff007f; margin: 20px; font-weight: bold; }
-        .btn { padding: 20px 40px; font-size: 1.5em; cursor: pointer; background: #00d4ff; border: none; border-radius: 50px; color: #000; font-weight: bold; box-shadow: 0 4px 15px rgba(0,212,255,0.4); }
-        .btn:hover { background: #00b8e6; }
+        body { font-family: sans-serif; text-align: center; background: #0f172a; color: white; padding: 20px; }
+        .container { max-width: 400px; margin: auto; background: #1e293b; padding: 30px; border-radius: 20px; }
+        #timer { font-size: 3.5rem; color: #38bdf8; margin: 20px 0; font-weight: bold; }
+        .btn { width: 100%; padding: 15px; background: #ec4899; border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; }
+        #qrcode { margin-top: 25px; padding: 10px; background: white; display: inline-block; border-radius: 10px; }
+        #qrcode canvas { width: 180px !important; height: 180px !important; }
     </style>
 </head>
 <body>
-    <h1>Viral QR - Test Mode</h1>
-    <div id="timer">00:00:00</div>
-    <button class="btn" onclick="startTimer()">AVVIA TIMER 60 MIN</button>
-
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <div class="container">
+        <h1>Viral QR</h1>
+        <div id="timer">00:00</div>
+        <button class="btn" onclick="startTimer()">AVVIA IL GIOCO</button>
+        <div id="qrcode"></div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script>
-        const socket = io('http://localhost:3001');
-        
-        function startTimer() {
-            socket.emit('createMaster', 60);
-        }
-
+        const socket = io();
+        QRCode.toCanvas(document.getElementById('qrcode'), window.location.href);
+        function startTimer() { socket.emit('createMaster', 60); }
         socket.on('timerStarted', (endTime) => {
             setInterval(() => {
-                const now = Date.now();
-                const diff = endTime - now;
-                if (diff <= 0) {
-                    document.getElementById('timer').innerText = "SCADUTO";
-                    return;
-                }
-                const minutes = Math.floor((diff % 3600000) / 60000);
-                const seconds = Math.floor((diff % 60000) / 1000);
-                document.getElementById('timer').innerText = minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+                const diff = endTime - Date.now();
+                if (diff <= 0) { document.getElementById('timer').innerText = "FINE"; return; }
+                const min = Math.floor(diff / 60000);
+                const sec = Math.floor((diff % 60000) / 1000);
+                document.getElementById('timer').innerText = min + ":" + (sec < 10 ? '0' : '') + sec;
             }, 1000);
-        });
-
-        socket.on('init', (data) => {
-            if(data.globalEndTime) {
-                // Se il timer è già partito, lo mostriamo subito
-                socket.emit('createMaster', 0); 
-            }
         });
     </script>
 </body>
