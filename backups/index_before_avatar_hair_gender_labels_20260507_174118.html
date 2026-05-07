@@ -1202,11 +1202,7 @@
             <option value="curly">Ricci pieni</option>
             <option value="bob">Caschetto</option>
             <option value="long">Lunghi sciolti</option>
-            <option value="long-wavy">Lunghi mossi</option>
-            <option value="fringe">Frangia</option>
-            <option value="side">Riga laterale</option>
             <option value="tied">Raccolti / coda</option>
-            <option value="bun">Chignon</option>
             <option value="bald">Senza capelli</option>
           </select>
 
@@ -1227,7 +1223,6 @@
             <option value="short">Barba corta</option>
             <option value="full">Barba piena</option>
             <option value="moustache">Baffi</option>
-            <option value="goatee">Pizzetto</option>
             <option value="goatee">Pizzetto</option>
           </select>
 
@@ -1307,11 +1302,7 @@
             <option value="curly">Ricci pieni</option>
             <option value="bob">Caschetto</option>
             <option value="long">Lunghi sciolti</option>
-            <option value="long-wavy">Lunghi mossi</option>
-            <option value="fringe">Frangia</option>
-            <option value="side">Riga laterale</option>
             <option value="tied">Raccolti / coda</option>
-            <option value="bun">Chignon</option>
             <option value="bald">Senza capelli</option>
           </select>
 
@@ -1332,7 +1323,6 @@
             <option value="short">Barba corta</option>
             <option value="full">Barba piena</option>
             <option value="moustache">Baffi</option>
-            <option value="goatee">Pizzetto</option>
             <option value="goatee">Pizzetto</option>
           </select>
 
@@ -1780,17 +1770,13 @@
       const cfg = {
         type,
         creature: pick(['alien', 'bear', 'dog-small', 'dog-medium', 'dog-large', 'cat-siamese', 'cat-persian', 'cat-black', 'cat-red', 'horse', 'mare']),
-        face: type === 'woman'
-          ? pick(['oval', 'round', 'long'])
-          : type === 'man'
-            ? pick(['oval', 'square', 'long'])
-            : pick(['oval', 'round', 'square', 'long']),
+        face: pick(['oval', 'round', 'square', 'long']),
         skin: pick(['light', 'warm', 'olive', 'medium', 'dark']),
         hair: type === 'woman'
-          ? pick(['wavy', 'curly', 'bob', 'long', 'long-wavy', 'fringe', 'side', 'tied', 'bun'])
+          ? pick(['wavy', 'curly', 'bob', 'long', 'tied'])
           : type === 'man'
-            ? pick(['short', 'crop', 'wavy', 'curly', 'side', 'bald'])
-            : pick(['short', 'crop', 'wavy', 'curly', 'bob', 'long', 'long-wavy', 'fringe', 'side', 'tied', 'bun', 'bald']),
+            ? pick(['short', 'crop', 'wavy', 'curly', 'bald'])
+            : pick(['short', 'crop', 'wavy', 'curly', 'bob', 'long', 'tied', 'bald']),
         hairColor: pick(['brown', 'dark', 'black', 'blonde', 'red', 'gray', 'saltpepper', 'color']),
         beard: type === 'man'
           ? pick(['none', 'shadow', 'short', 'full', 'moustache', 'goatee'])
@@ -1801,6 +1787,7 @@
 
       if (cfg.hair === 'bald') cfg.hairColor = 'gray';
       if (cfg.type === 'woman') cfg.beard = 'none';
+      if (['long', 'tied', 'bob'].includes(cfg.hair) && cfg.type === 'man') cfg.beard = pick(['none', 'shadow', 'short', 'goatee']);
 
       window[`avatarAnon_${scope}`] = false;
       setAvatarSelects(scope, cfg);
@@ -1827,20 +1814,6 @@
     }
 
 
-
-    function updateAvatarGenderLabels(scope) {
-      const type = document.getElementById(`avatar-type-${scope}`)?.value || 'man';
-      const hair = document.getElementById(`avatar-hair-${scope}`);
-      const beard = document.getElementById(`avatar-beard-${scope}`);
-
-      if (!hair || !beard) return;
-
-      if (type === 'woman') {
-        beard.value = 'none';
-      }
-    }
-
-
     function handleAvatarTypeChange(scope) {
       const type = document.getElementById(`avatar-type-${scope}`)?.value || 'man';
       const creature = document.getElementById(`avatar-creature-${scope}`);
@@ -1860,16 +1833,14 @@
       });
 
       if (type === 'woman') {
-        if (hair && ['short', 'crop', 'bald'].includes(hair.value)) hair.value = 'long-wavy';
-        if (face && face.value === 'square') face.value = 'oval';
+        if (hair && ['short', 'crop', 'bald'].includes(hair.value)) hair.value = 'long';
         if (beard) beard.value = 'none';
       }
 
       if (type === 'man') {
-        if (hair && ['long', 'long-wavy', 'fringe', 'tied', 'bun'].includes(hair.value)) hair.value = 'crop';
+        if (hair && ['bob', 'long', 'tied'].includes(hair.value)) hair.value = 'crop';
       }
 
-      updateAvatarGenderLabels(scope);
       window[`avatarAnon_${scope}`] = false;
       updateAvatarPreview(scope);
     }
@@ -2025,10 +1996,9 @@
         long: `<path d="M50 21 C65 21 74 35 73 56 C72 79 62 89 50 89 C38 89 28 79 27 56 C26 35 35 21 50 21Z" fill="${skin}" stroke="${darkStroke}" stroke-width="1"/>`
       };
 
-      const shoulderColor = type === 'woman' ? '#5B2B8C' : '#1A237E';
-      const neckAndBody = `
+      let neckAndBody = `
         <path d="M42 78 H58 V91 H42Z" fill="${skin}" opacity=".96"/>
-        <path d="M22 100 C27 86 38 84 50 84 C62 84 73 86 78 100Z" fill="${shoulderColor}"/>
+        <path d="M22 100 C27 86 38 84 50 84 C62 84 73 86 78 100Z" fill="#1A237E"/>
         <path d="M34 91 C42 96 58 96 66 91" fill="none" stroke="#D4AF37" stroke-width="2" opacity=".7"/>
       `;
 
@@ -2041,13 +2011,8 @@
       }
 
       if (cfg.hair === 'crop') {
-        frontHair = `<path d="M25 45 C24 23 38 14 52 15 C68 16 78 29 76 48 C66 31 42 29 25 45Z" fill="${hairColor}"/>
-                     <path d="M28 36 C42 21 63 22 74 40 C58 32 43 32 28 36Z" fill="rgba(255,255,255,.14)"/>`;
-      }
-
-      if (cfg.hair === 'side') {
-        frontHair = `<path d="M25 45 C27 24 40 17 55 18 C69 19 77 31 75 47 C61 36 43 33 25 45Z" fill="${hairColor}"/>
-                     <path d="M36 25 C45 38 60 36 73 43" fill="none" stroke="rgba(255,255,255,.20)" stroke-width="3.5" stroke-linecap="round"/>`;
+        frontHair = `<path d="M26 45 C25 24 38 15 52 16 C67 17 77 29 75 47 C65 31 42 29 26 45Z" fill="${hairColor}"/>
+                     <path d="M29 36 C42 21 62 22 73 39 C58 32 43 32 29 36Z" fill="rgba(255,255,255,.13)"/>`;
       }
 
       if (cfg.hair === 'wavy') {
@@ -2057,49 +2022,31 @@
 
       if (cfg.hair === 'curly') {
         frontHair = `
-          <circle cx="29" cy="39" r="11" fill="${hairColor}"/>
+          <circle cx="30" cy="39" r="11" fill="${hairColor}"/>
           <circle cx="39" cy="29" r="12" fill="${hairColor}"/>
           <circle cx="51" cy="25" r="13" fill="${hairColor}"/>
           <circle cx="63" cy="31" r="12" fill="${hairColor}"/>
           <circle cx="72" cy="42" r="10" fill="${hairColor}"/>
-          <path d="M26 48 C34 34 65 33 76 48 C67 38 43 37 26 48Z" fill="${hairColor}"/>
+          <path d="M27 47 C34 34 64 33 75 47 C67 38 43 37 27 47Z" fill="${hairColor}"/>
         `;
       }
 
       if (cfg.hair === 'bob') {
-        backHair = `<path d="M24 41 C24 20 76 18 77 42 L74 78 C64 86 36 86 26 78Z" fill="${hairColor}"/>`;
+        backHair = `<path d="M24 41 C24 20 76 18 77 42 L74 76 C64 84 36 84 26 76Z" fill="${hairColor}"/>`;
         frontHair = `<path d="M25 45 C30 28 42 20 54 22 C67 24 75 34 75 47 C63 39 45 36 25 45Z" fill="${hairColor}"/>
                      <path d="M31 31 C41 23 57 24 70 37" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="3" stroke-linecap="round"/>`;
       }
 
       if (cfg.hair === 'long') {
-        backHair = `<path d="M22 43 C20 19 80 17 79 45 C79 64 85 82 74 95 C64 86 36 86 26 95 C15 82 21 64 22 43Z" fill="${hairColor}"/>`;
-        frontHair = `<path d="M23 45 C28 26 40 17 54 19 C69 21 78 34 77 50 C63 39 44 36 23 45Z" fill="${hairColor}"/>
+        backHair = `<path d="M23 43 C21 19 78 17 78 44 C78 62 83 77 74 91 C64 83 36 83 26 91 C17 77 23 62 23 43Z" fill="${hairColor}"/>`;
+        frontHair = `<path d="M24 45 C28 27 40 18 54 20 C68 22 77 34 76 49 C63 39 44 36 24 45Z" fill="${hairColor}"/>
                      <path d="M30 33 C43 24 59 25 72 40" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="3" stroke-linecap="round"/>`;
       }
 
-      if (cfg.hair === 'long-wavy') {
-        backHair = `<path d="M20 43 C18 20 81 17 81 46 C82 62 90 77 78 96 C63 88 37 88 22 96 C10 77 18 62 20 43Z" fill="${hairColor}"/>`;
-        frontHair = `<path d="M22 46 C25 28 37 18 50 20 C62 13 78 29 78 50 C64 39 47 34 22 46Z" fill="${hairColor}"/>
-                     <path d="M29 36 C39 27 50 34 58 26 C67 32 72 37 76 45" fill="none" stroke="rgba(255,255,255,.20)" stroke-width="3" stroke-linecap="round"/>`;
-      }
-
-      if (cfg.hair === 'fringe') {
-        backHair = `<path d="M25 44 C24 22 76 20 76 45 C66 39 40 39 25 44Z" fill="${hairColor}"/>`;
-        frontHair = `<path d="M26 42 C31 23 45 18 58 21 C69 23 76 33 75 45 C62 39 45 38 26 42Z" fill="${hairColor}"/>
-                     <path d="M30 37 C36 43 42 43 48 37 C54 43 62 43 70 38" fill="none" stroke="${hairColor}" stroke-width="8" stroke-linecap="round"/>`;
-      }
-
       if (cfg.hair === 'tied') {
-        backHair = `<circle cx="79" cy="54" r="13" fill="${hairColor}"/>
-                    <path d="M24 45 C22 22 78 19 76 46 C61 37 42 36 24 45Z" fill="${hairColor}"/>`;
-        frontHair = `<path d="M26 43 C31 26 43 20 55 22 C68 24 75 34 74 46 C61 38 43 36 26 43Z" fill="${hairColor}"/>`;
-      }
-
-      if (cfg.hair === 'bun') {
-        backHair = `<circle cx="50" cy="18" r="12" fill="${hairColor}"/>
-                    <path d="M25 44 C25 22 75 22 75 44 C64 36 40 36 25 44Z" fill="${hairColor}"/>`;
-        frontHair = `<path d="M27 42 C34 28 46 23 58 25 C69 27 74 35 73 45 C60 37 43 36 27 42Z" fill="${hairColor}"/>`;
+        backHair = `<circle cx="78" cy="54" r="12" fill="${hairColor}"/>
+                    <path d="M25 45 C23 23 76 20 75 46 C61 37 42 36 25 45Z" fill="${hairColor}"/>`;
+        frontHair = `<path d="M27 43 C31 26 43 20 55 22 C68 24 75 34 74 46 C61 38 43 36 27 43Z" fill="${hairColor}"/>`;
       }
 
       if (cfg.hair === 'bald') {
