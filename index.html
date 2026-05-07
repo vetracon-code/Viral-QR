@@ -252,10 +252,25 @@
         let confirmedAddressLocation = null;
         let timerInterval = null;
         let currentGameEndTime = null;
+        let currentGameCenter = null;
 
         const map = L.map('map', { zoomControl: true }).setView([45.4642, 9.19], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         map.zoomControl.setPosition('bottomright');
+
+        function centerMapOnEvent(zoom = 16) {
+            if (!currentGameCenter || !currentGameCenter.lat || !currentGameCenter.lng) return;
+
+            setTimeout(() => {
+                map.invalidateSize(true);
+                map.setView([currentGameCenter.lat, currentGameCenter.lng], zoom, { animate: false });
+            }, 250);
+
+            setTimeout(() => {
+                map.invalidateSize(true);
+                map.setView([currentGameCenter.lat, currentGameCenter.lng], zoom, { animate: false });
+            }, 800);
+        }
 
         function startGameTimer(endTime) {
             currentGameEndTime = endTime;
@@ -301,14 +316,23 @@
                 startGameTimer(state.endTime);
             }
             if (state && state.center) {
-                map.setView([state.center.lat, state.center.lng], 15);
+                currentGameCenter = state.center;
+                centerMapOnEvent(16);
             }
         });
 
         socket.on('timerStarted', d => {
             if (d && d.name) document.getElementById('display-title').innerText = d.name;
             if (d && d.endTime) startGameTimer(d.endTime);
-            if (d && d.center) map.setView([d.center.lat, d.center.lng], 15);
+            if (d && d.center) {
+                currentGameCenter = d.center;
+                centerMapOnEvent(16);
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            if (currentGameCenter) centerMapOnEvent(map.getZoom() || 16);
+            else setTimeout(() => map.invalidateSize(true), 250);
         });
 
         if (window.location.search.includes('admin')) {
@@ -402,7 +426,14 @@
             navigator.geolocation.getCurrentPosition(p => {
                 socket.emit('registerUser', { nick, lat: p.coords.latitude, lng: p.coords.longitude });
                 document.getElementById(type === 'admin' ? 'admin-setup' : 'player-reg').classList.add('hidden');
-                map.setView([p.coords.latitude, p.coords.longitude], 16);
+                if (currentGameCenter) {
+                    centerMapOnEvent(16);
+                } else {
+                    setTimeout(() => {
+                        map.invalidateSize(true);
+                        map.setView([p.coords.latitude, p.coords.longitude], 16);
+                    }, 300);
+                }
             });
         }
 
@@ -410,6 +441,8 @@
             myId = d.id;
             document.getElementById('main-dashboard').classList.remove('hidden');
             document.getElementById('user-hello').innerText = d.user.nick;
+            if (currentGameCenter) centerMapOnEvent(16);
+            else setTimeout(() => map.invalidateSize(true), 300);
             if (currentGameEndTime) startGameTimer(currentGameEndTime);
             if(window.location.search.includes('admin')) document.getElementById('admin-powers').classList.remove('hidden');
             renderPersonalQr();
