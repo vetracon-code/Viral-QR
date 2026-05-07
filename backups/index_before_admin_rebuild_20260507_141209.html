@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina Live</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root { --accent: #D4AF37; --primary: #1A237E; --danger: #C62828; --bg: #f0f2f5; }
+        body { font-family: -apple-system, sans-serif; margin:0; background: var(--bg); color: #222; text-align: center; }
+        .header { background: var(--primary); color: white; padding: 10px; position: sticky; top:0; z-index: 1000; }
+        
+        /* Dashboard Layout */
+        .player-profile { padding: 20px; background: white; border-bottom: 3px solid var(--accent); }
+        .qr-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 24px 0;
+            background: white;
+            padding: 18px;
+            border-radius: 24px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            min-width: 190px;
+            min-height: 190px;
+            overflow: visible;
+        }
+        #qr-canvas {
+            display: block;
+            width: 180px !important;
+            height: 180px !important;
+            background: white;
+            position: relative;
+            z-index: 2;
+        }
+        #qr-fallback {
+            display: none;
+            width: 180px;
+            min-height: 180px;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #1A237E;
+            border: 1px dashed #D4AF37;
+            border-radius: 16px;
+            padding: 12px;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* Like Stats attorno al QR */
+        .stat-badge {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 50px;
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 5;
+        }
+        .s-tl { top: -10px; left: -30px; }
+        .s-tr { top: -10px; right: -30px; }
+        .s-ml { top: 82px; left: -42px; }
+        .s-mr { top: 82px; right: -42px; }
+        .s-bl { bottom: -10px; left: -30px; }
+        .s-br { bottom: -10px; right: -30px; }
+
+        /* Liste Notifiche */
+        #notif-list { max-width: 400px; margin: 10px auto; background: #fff; border-radius: 10px; text-align: left; max-height: 200px; overflow-y: auto; }
+        .notif-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .btn-reply { background: var(--accent); color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 0.7rem; cursor: pointer; }
+
+        .map-box { position: relative; margin-top: 20px; }
+        #map { height: 250px; width: 100%; margin-top: 0; }
+        .map-recenter-btn {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            z-index: 700;
+            width: auto;
+            padding: 9px 12px;
+            border: none;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.96);
+            color: #1A237E;
+            font-size: 0.78rem;
+            font-weight: 800;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.22);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .map-recenter-btn span:first-child {
+            font-size: 1rem;
+            line-height: 1;
+        }
+        .content { padding: 15px; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .btn { border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 10px; color: white; }
+        .btn-gold { background: var(--accent); }
+        .hidden { display: none; }
+
+        .admin-field { margin-bottom: 12px; text-align: left; }
+        .admin-field label { display: block; font-size: 0.78rem; font-weight: 700; color: #333; margin-bottom: 5px; }
+        .admin-field input, .admin-field select {
+            width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #ddd;
+            border-radius: 10px; font-size: 0.95rem; background: #fff;
+        }
+        .admin-row { display: grid; grid-template-columns: 1fr 110px; gap: 10px; }
+        .admin-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .btn-light { background:#eef1f7; color:#1A237E; border:1px solid #dce2f0; }
+        .btn-active { outline: 3px solid rgba(212,175,55,0.35); }
+        #address-confirm-box {
+            background:#fff8e1; border:1px solid #f1d37a; border-radius:12px;
+            padding:10px; font-size:0.85rem; margin-bottom:12px; text-align:left;
+        }
+        #game-timer-box {
+            background:#10194f; color:#fff; border-radius:14px; padding:10px 12px;
+            margin: 0 auto 14px auto; max-width:420px; box-shadow:0 4px 14px rgba(0,0,0,0.15);
+        }
+        #game-timer-box .timer-title { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; opacity:0.8; }
+        #game-timer { font-size:1.25rem; font-weight:800; margin-top:2px; }
+        
+        /* Overlay Interazioni */
+        #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:9999; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
+        .interaction-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+        .btn-int { padding: 12px; border-radius: 10px; border: 1px solid #ddd; background: #f8f9fa; font-size: 0.85rem; cursor: pointer; }
+    
+        #qr-canvas {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            width: 180px !important;
+            height: 180px !important;
+            background: white;
+            position: relative;
+            z-index: 2;
+        }
+        #qr-canvas img,
+        #qr-canvas canvas {
+            display: block !important;
+            width: 180px !important;
+            height: 180px !important;
+        }
+        .map-popup-name {
+            font-weight: 800;
+            color: #1A237E;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .map-popup-btn {
+            border: none;
+            background: #D4AF37;
+            color: white;
+            padding: 8px 10px;
+            border-radius: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            width: 100%;
+        }
+        .map-popup-self {
+            font-size: 0.78rem;
+            color: #555;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+    
+        #geo-warning {
+            position: fixed;
+            left: 14px;
+            right: 14px;
+            bottom: 14px;
+            z-index: 10000;
+            background: #fff3cd;
+            border: 1px solid #ffda6a;
+            color: #5a4300;
+            padding: 12px 14px;
+            border-radius: 14px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+            text-align: left;
+        }
+        #geo-warning strong {
+            display: block;
+            margin-bottom: 4px;
+            color: #8a5b00;
+        }
+        .map-popup-status {
+            font-size: 0.75rem;
+            text-align: center;
+            margin-top: 5px;
+            color: #C62828;
+            font-weight: 800;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="overlay">
+        <div id="scanner-container" class="hidden">
+            <div id="reader" style="width:300px"></div>
+        </div>
+        <div id="interaction-menu" style="width: 100%;">
+            <h3 id="reply-to-label">Invia a:</h3>
+            <div class="interaction-grid">
+                <button class="btn-int" onclick="sendInteraction('Mi piaci ❤️')">Mi piaci</button>
+                <button class="btn-int" onclick="sendInteraction('Non mi piaci 👎')">Non mi piaci</button>
+                <button class="btn-int" onclick="sendInteraction('Mi sei simpatico 😊')">Mi sei simpatico</button>
+                <button class="btn-int" onclick="sendInteraction('Applauso 👏')">Applauso</button>
+                <button class="btn-int" onclick="sendInteraction('Ti trovo interessante 🤔')">Ti trovo interessante</button>
+                <button class="btn-int" onclick="sendInteraction('Prendiamo un caffè? ☕')">Prendiamo un caffè</button>
+                <button class="btn-int" onclick="sendInteraction('Brindiamo! 🥂')">Brindiamo</button>
+                <button class="btn-int" onclick="sendInteraction('Mi piaci tanto 😍')">Mi piaci tanto</button>
+            </div>
+        </div>
+        <button class="btn" style="background:#666; margin-top:20px;" onclick="closeOverlay()">CHIUDI</button>
+    </div>
+
+    <div id="geo-warning" class="hidden"></div>
+
+    <div class="header">
+        <h2 id="display-title" style="margin:0; font-size: 1.1rem;">LUMINA</h2>
+    </div>
+
+    <div class="content">
+        <div id="admin-setup" class="card hidden">
+            <h3>Setup Host</h3>
+
+            <div class="admin-field">
+                <label>Nome evento</label>
+                <input type="text" id="adm-event-name" placeholder="Es. Lumina Live Night">
+            </div>
+
+            <div class="admin-field">
+                <label>Durata gioco</label>
+                <div class="admin-row">
+                    <input type="number" id="adm-duration-value" min="1" value="60">
+                    <select id="adm-duration-unit">
+                        <option value="min">minuti</option>
+                        <option value="hour">ore</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="admin-field">
+                <label>Raggio area gioco</label>
+                <div class="admin-row">
+                    <input type="number" id="adm-radius-value" min="20" step="10" value="150">
+                    <select id="adm-radius-unit">
+                        <option value="m">metri</option>
+                        <option value="km">km</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="admin-field">
+                <label>Luogo evento</label>
+                <div class="admin-choice">
+                    <button type="button" class="btn btn-light btn-active" id="btn-loc-gps" onclick="setLocationMode('gps')">Usa la mia posizione</button>
+                    <button type="button" class="btn btn-light" id="btn-loc-address" onclick="setLocationMode('address')">Inserisci indirizzo</button>
+                </div>
+                <input type="text" id="adm-address" class="hidden" placeholder="Es. Piazza Duomo, Milano">
+            </div>
+
+            <div id="address-confirm-box" class="hidden"></div>
+
+            <button class="btn btn-gold" onclick="activateArea()">ATTIVA AREA GIOCO</button>
+
+            <div id="admin-join-section" class="hidden" style="margin-top:18px;">
+                <div class="admin-field">
+                    <label>Il tuo nome nel gioco</label>
+                    <input type="text" id="adm-nick" placeholder="Nickname Admin">
+                </div>
+                <button class="btn" style="background:#28a745" onclick="joinGame('admin')">ENTRA NEL GIOCO COME ADMIN</button>
+            </div>
+        </div>
+
+
+        <div id="player-reg" class="card">
+            <h3>Benvenuto</h3>
+            <input type="text" id="nickname" placeholder="Tuo Nickname" style="width:100%; padding:10px; margin-bottom:10px;">
+            <button class="btn btn-gold" onclick="joinGame('player')">ENTRA NEL GIOCO</button>
+        </div>
+
+        <div id="main-dashboard" class="hidden">
+            <div id="game-timer-box" class="hidden">
+                <div class="timer-title">Tempo rimanente</div>
+                <div id="game-timer">--:--</div>
+            </div>
+            <div class="player-profile">
+                <h3 id="user-hello" style="margin:0"></h3>
+                
+                <div class="qr-wrapper">
+                    <div id="qr-canvas"></div>
+                    <div id="qr-fallback">QR non disponibile.<br>Ricarica la pagina o riprova.</div><div class="stat-badge s-tl" onclick="showLikers('Mi sei simpatico 😊')">😊 <span id="count-friendly">0</span></div>
+                    <div class="stat-badge s-tr" onclick="showLikers('Ti trovo interessante 🤔')">🤔 <span id="count-interesting">0</span></div>
+                    <div class="stat-badge s-ml" onclick="showLikers('Prendiamo un caffè? ☕')">☕ <span id="count-coffee">0</span></div>
+                    <div class="stat-badge s-mr" onclick="showLikers('Brindiamo! 🥂')">🥂 <span id="count-cheers">0</span></div>
+                    <div class="stat-badge s-bl" onclick="showLikers('Applauso 👏')">👏 <span id="count-clap">0</span></div>
+                    <div class="stat-badge s-br" onclick="showLikers('Mi piaci ❤️')">❤️ <span id="count-like">0</span></div>
+                </div>
+
+                <div id="notif-list" class="hidden"></div>
+                
+                <button class="btn btn-gold" onclick="startScanner()" style="margin-top:10px;">SCANNERIZZA QUALCUNO</button>
+                <div id="admin-powers" class="hidden">
+                    <button class="btn" style="background:var(--danger); font-size:0.8rem; padding:8px" onclick="resetAll()">RESET SESSIONE</button>
+                </div>
+            </div>
+
+            <div class="map-box">
+                <button class="map-recenter-btn" onclick="recenterMapOnMe()">
+                    <span>⌖</span>
+                    <span>Ricentra su di me</span>
+                </button>
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const socket = io();
+        let myId, markers = {}, html5QrCode, currentTargetId;
+        let interactionsReceived = [];
+        let locationMode = 'gps';
+        let confirmedAddressLocation = null;
+        let timerInterval = null;
+        let currentGameEndTime = null;
+        let currentGameCenter = null;
+        let currentGameRadius = 150;
+        let eventCircle = null;
+        let locationMode = 'gps';
+        let confirmedAddressLocation = null;
+        let timerInterval = null;
+        let currentGameEndTime = null;
+        let currentGameCenter = null;
+        let currentGameRadius = 150;
+        let eventCircle = null;
+        let myGeoWatchId = null;
+        let pendingTargetFromUrl = new URLSearchParams(window.location.search).get("target");
+
+        const map = L.map('map', { zoomControl: true }).setView([45.4642, 9.19], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        map.zoomControl.setPosition('bottomright');
+
+        function drawEventCircle() {
+            if (!currentGameCenter || !currentGameCenter.lat || !currentGameCenter.lng) return;
+
+            if (eventCircle) {
+                map.removeLayer(eventCircle);
+                eventCircle = null;
+            }
+
+            eventCircle = L.circle([currentGameCenter.lat, currentGameCenter.lng], {
+                radius: currentGameRadius || 150,
+                weight: 2,
+                opacity: 0.9,
+                fillOpacity: 0.08
+            }).addTo(map);
+        }
+
+        function showGeoWarning(message) {
+            const box = document.getElementById('geo-warning');
+            if (!box) return;
+            box.innerHTML = `<strong>Sei fuori dall'area di gioco</strong>${message}`;
+            box.classList.remove('hidden');
+        }
+
+        function hideGeoWarning() {
+            const box = document.getElementById('geo-warning');
+            if (!box) return;
+            box.classList.add('hidden');
+        }
+
+        function startPositionWatch() {
+            if (!navigator.geolocation || myGeoWatchId) return;
+
+            myGeoWatchId = navigator.geolocation.watchPosition(p => {
+                if (!myId) return;
+
+                socket.emit('updatePosition', {
+                    lat: p.coords.latitude,
+                    lng: p.coords.longitude
+                });
+            }, () => {
+                console.warn("Posizione non aggiornata.");
+            }, {
+                enableHighAccuracy: true,
+                maximumAge: 10000,
+                timeout: 10000
+            });
+        }
+
+        function centerMapOnEvent(zoom = 16) {
+            if (!currentGameCenter || !currentGameCenter.lat || !currentGameCenter.lng) return;
+            drawEventCircle();
+
+            setTimeout(() => {
+                map.invalidateSize(true);
+                map.setView([currentGameCenter.lat, currentGameCenter.lng], zoom, { animate: false });
+            }, 250);
+
+            setTimeout(() => {
+                map.invalidateSize(true);
+                map.setView([currentGameCenter.lat, currentGameCenter.lng], zoom, { animate: false });
+            }, 800);
+        }
+
+        function startGameTimer(endTime) {
+            currentGameEndTime = endTime;
+            const box = document.getElementById('game-timer-box');
+            const timer = document.getElementById('game-timer');
+            if (!endTime) {
+                box.classList.add('hidden');
+                return;
+            }
+
+            box.classList.remove('hidden');
+
+            if (timerInterval) clearInterval(timerInterval);
+
+            function renderTimer() {
+                const remaining = Math.max(0, endTime - Date.now());
+                const totalSeconds = Math.floor(remaining / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+
+                if (hours > 0) {
+                    timer.innerText = `${hours}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+                } else {
+                    timer.innerText = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                }
+
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    timer.innerText = "Tempo scaduto";
+                }
+            }
+
+            renderTimer();
+            timerInterval = setInterval(renderTimer, 1000);
+        }
+
+        socket.on('sync', state => {
+            if (state && state.name) {
+                document.getElementById('display-title').innerText = state.name;
+            }
+            if (state && state.endTime) {
+                startGameTimer(state.endTime);
+            }
+            if (state && state.radiusMeters) currentGameRadius = state.radiusMeters;
+            if (state && state.center) {
+                currentGameCenter = state.center;
+                centerMapOnEvent(16);
+            }
+        });
+
+        socket.on('timerStarted', d => {
+            if (d && d.name) document.getElementById('display-title').innerText = d.name;
+            if (d && d.endTime) startGameTimer(d.endTime);
+            if (d && d.radiusMeters) currentGameRadius = d.radiusMeters;
+            if (d && d.center) {
+                currentGameCenter = d.center;
+                centerMapOnEvent(16);
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            if (currentGameCenter) centerMapOnEvent(map.getZoom() || 16);
+            else setTimeout(() => map.invalidateSize(true), 250);
+        });
+
+        if (window.location.search.includes('admin')) {
+            document.getElementById('admin-setup').classList.remove('hidden');
+            document.getElementById('player-reg').classList.add('hidden');
+        }
+
+
+        function setLocationMode(mode) {
+            locationMode = mode;
+            confirmedAddressLocation = null;
+
+            const addressInput = document.getElementById('adm-address');
+            const confirmBox = document.getElementById('address-confirm-box');
+
+            if (addressInput) addressInput.classList.toggle('hidden', mode !== 'address');
+            if (confirmBox) confirmBox.classList.add('hidden');
+
+            const gpsBtn = document.getElementById('btn-loc-gps');
+            const addressBtn = document.getElementById('btn-loc-address');
+
+            if (gpsBtn) gpsBtn.classList.toggle('btn-active', mode === 'gps');
+            if (addressBtn) addressBtn.classList.toggle('btn-active', mode === 'address');
+        }
+
+        async function geocodeAddress(address) {
+            const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(address);
+            const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            const data = await res.json();
+
+            if (!data || !data.length) {
+                throw new Error('Indirizzo non trovato. Prova a scriverlo in modo più completo.');
+            }
+
+            return {
+                lat: parseFloat(data[0].lat),
+                lng: parseFloat(data[0].lon),
+                label: data[0].display_name
+            };
+        }
+
+        function getDurationSettings() {
+            const value = parseInt(document.getElementById('adm-duration-value')?.value, 10) || 60;
+            const unit = document.getElementById('adm-duration-unit')?.value || 'min';
+            return { value: Math.max(1, value), unit };
+        }
+
+        function getRadiusSettings() {
+            const value = parseFloat(document.getElementById('adm-radius-value')?.value) || 150;
+            const unit = document.getElementById('adm-radius-unit')?.value || 'm';
+            const meters = unit === 'km' ? value * 1000 : value;
+            return Math.max(20, Math.round(meters));
+        }
+
+        async function activateArea() {
+            const name = document.getElementById('adm-event-name')?.value.trim() || "Lumina";
+            const duration = getDurationSettings();
+            const radiusMeters = getRadiusSettings();
+
+            if (locationMode === 'gps') {
+                navigator.geolocation.getCurrentPosition(p => {
+                    socket.emit('adminStart', {
+                        name,
+                        value: duration.value,
+                        unit: duration.unit,
+                        radiusMeters,
+                        lat: p.coords.latitude,
+                        lng: p.coords.longitude
+                    });
+
+                    document.getElementById('admin-join-section').classList.remove('hidden');
+                }, () => {
+                    alert("Non riesco a leggere la tua posizione. Puoi usare l'indirizzo manuale.");
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 5000
+                });
+
+                return;
+            }
+
+            const address = document.getElementById('adm-address')?.value.trim();
+
+            if (!address) {
+                alert("Inserisci un indirizzo prima di attivare l'area gioco.");
+                return;
+            }
+
+            try {
+                const found = await geocodeAddress(address);
+                const box = document.getElementById('address-confirm-box');
+
+                if (!confirmedAddressLocation || confirmedAddressLocation.label !== found.label) {
+                    confirmedAddressLocation = found;
+
+                    box.innerHTML = `
+                        <strong>Confermi questo luogo?</strong><br>
+                        ${found.label}<br><br>
+                        <button class="btn btn-gold" onclick="activateArea()">CONFERMA E ATTIVA</button>
+                    `;
+                    box.classList.remove('hidden');
+                    return;
+                }
+
+                socket.emit('adminStart', {
+                    name,
+                    value: duration.value,
+                    unit: duration.unit,
+                    radiusMeters,
+                    lat: confirmedAddressLocation.lat,
+                    lng: confirmedAddressLocation.lng
+                });
+
+                document.getElementById('admin-join-section').classList.remove('hidden');
+            } catch (e) {
+                alert(e.message || "Errore nella ricerca dell'indirizzo.");
+            }
+        }
+
+
+        function joinGame(type) {
+            const nick = document.getElementById(type === 'admin' ? 'adm-nick' : 'nickname').value || "Player";
+            navigator.geolocation.getCurrentPosition(p => {
+                socket.emit('registerUser', { nick, lat: p.coords.latitude, lng: p.coords.longitude });
+                document.getElementById(type === 'admin' ? 'admin-setup' : 'player-reg').classList.add('hidden');
+                if (currentGameCenter) {
+                    centerMapOnEvent(16);
+                } else {
+                    setTimeout(() => {
+                        map.invalidateSize(true);
+                        map.setView([p.coords.latitude, p.coords.longitude], 16);
+                    }, 300);
+                }
+            });
+        }
+
+        socket.on('profileCreated', d => {
+            myId = d.id;
+            document.getElementById('main-dashboard').classList.remove('hidden');
+            document.getElementById('user-hello').innerText = d.user.nick;
+            if (currentGameCenter) centerMapOnEvent(16);
+            else setTimeout(() => map.invalidateSize(true), 300);
+            if (currentGameEndTime) startGameTimer(currentGameEndTime);
+            if(window.location.search.includes('admin')) document.getElementById('admin-powers').classList.remove('hidden');
+            renderPersonalQr();
+            startPositionWatch();
+
+            if (pendingTargetFromUrl && pendingTargetFromUrl !== myId) {
+                prepareInteractionWith(pendingTargetFromUrl, "utente selezionato");
+                pendingTargetFromUrl = null;
+            }
+        });
+
+        function renderPersonalQr() {
+            const qrBox = document.getElementById('qr-canvas');
+            const fallback = document.getElementById('qr-fallback');
+            const qrUrl = window.location.origin + "/?target=" + myId;
+
+            if (!qrBox || !myId) {
+                if (fallback) {
+                    fallback.style.display = 'flex';
+                    fallback.innerHTML = "QR non disponibile.<br>ID giocatore mancante.";
+                }
+                return;
+            }
+
+            qrBox.innerHTML = "";
+            qrBox.style.display = 'flex';
+            if (fallback) fallback.style.display = 'none';
+
+            try {
+                if (typeof QRCode !== "function") {
+                    throw new Error("QRCodeJS non caricato.");
+                }
+
+                new QRCode(qrBox, {
+                    text: qrUrl,
+                    width: 180,
+                    height: 180,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            } catch (e) {
+                console.error(e);
+                qrBox.style.display = 'none';
+                if (fallback) {
+                    fallback.style.display = 'flex';
+                    fallback.innerHTML = "QR non generato.<br>Libreria non caricata.";
+                }
+            }
+        }
+
+        socket.on('receiveLike', d => {
+            interactionsReceived.push(d);
+            updateCounters();
+        });
+
+        function updateCounters() {
+            document.getElementById('count-friendly').innerText = interactionsReceived.filter(i => i.type.includes('😊')).length;
+            document.getElementById('count-interesting').innerText = interactionsReceived.filter(i => i.type.includes('🤔')).length;
+            document.getElementById('count-coffee').innerText = interactionsReceived.filter(i => i.type.includes('☕')).length;
+            document.getElementById('count-cheers').innerText = interactionsReceived.filter(i => i.type.includes('🥂')).length;
+            document.getElementById('count-clap').innerText = interactionsReceived.filter(i => i.type.includes('👏')).length;
+            document.getElementById('count-like').innerText = interactionsReceived.filter(i => i.type.includes('❤️')).length + interactionsReceived.filter(i => i.type.includes('😍')).length;
+        }
+
+        function showLikers(type) {
+            const list = document.getElementById('notif-list');
+            const filtered = interactionsReceived.filter(i => i.type === type);
+            list.innerHTML = filtered.length ? `<p style="padding:10px; font-weight:bold; margin:0; border-bottom:1px solid #eee">Hanno inviato ${type}:</p>` : "";
+            filtered.forEach(i => {
+                list.innerHTML += `<div class="notif-item">
+                    <span>${i.fromNick || 'Anonimo'}</span>
+                    <button class="btn-reply" onclick="prepareReply('${i.from}')">RICAMBIA</button>
+                </div>`;
+            });
+            list.classList.toggle('hidden');
+        }
+
+        function prepareInteractionWith(id, nick) {
+            if (!id) {
+                alert("Utente non disponibile.");
+                return;
+            }
+
+            if (id === myId) {
+                alert("Questo sei tu. Puoi interagire con gli altri presenti.");
+                return;
+            }
+
+            currentTargetId = id;
+            document.getElementById('overlay').style.display = 'flex';
+            document.getElementById('scanner-container').classList.add('hidden');
+            document.getElementById('reply-to-label').innerText = "Invia a " + (nick || "utente") + ":";
+        }
+
+        function prepareReply(id) {
+            prepareInteractionWith(id, "chi ti ha scritto");
+        }
+
+        function startScanner() {
+            document.getElementById('overlay').style.display = 'flex';
+            document.getElementById('scanner-container').classList.remove('hidden');
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+                currentTargetId = new URL(text).searchParams.get("target");
+                html5QrCode.stop();
+                document.getElementById('scanner-container').classList.add('hidden');
+                document.getElementById('reply-to-label').innerText = "Scegli cosa inviare:";
+            });
+        }
+
+        function sendInteraction(type) {
+            if (!currentTargetId) {
+                alert("Prima scannerizza un QR valido.");
+                return;
+            }
+            socket.emit('sendLike', { to: currentTargetId, from: myId, type: type });
+            closeOverlay();
+            alert("Inviato!");
+        }
+
+        socket.on('interactionError', d => {
+            alert((d && d.message) ? d.message : "Interazione non riuscita.");
+        });
+
+        function closeOverlay() {
+            document.getElementById('overlay').style.display = 'none';
+            if(html5QrCode) try { html5QrCode.stop(); } catch(e){}
+        }
+
+        socket.on('updateMap', users => {
+            const activeIds = new Set(Object.keys(users || {}));
+
+            Object.values(markers).forEach(marker => {
+                const id = marker.__userId;
+                if (!activeIds.has(id)) {
+                    map.removeLayer(marker);
+                    delete markers[id];
+                }
+            });
+
+            Object.values(users || {}).forEach(u => {
+                if (!u || !u.lat || !u.lng || !u.id) return;
+
+                const isMe = u.id === myId;
+                const popupHtml = isMe
+                    ? `<div class="map-popup-name">${u.nick || 'Io'}</div><div class="map-popup-self">Sei tu</div>`
+                    : `<div class="map-popup-name">${u.nick || 'Utente'}</div><button class="map-popup-btn" onclick="prepareInteractionWith('${u.id}', '${String(u.nick || 'Utente').replace(/'/g, "\'")}')">Invia gradimento</button>`;
+
+                if (markers[u.id]) {
+                    markers[u.id].setLatLng([u.lat, u.lng]);
+                    markers[u.id].setStyle({
+                        opacity: isOutside ? 0.45 : 1,
+                        fillOpacity: isOutside ? 0.25 : 0.85
+                    });
+                    markers[u.id].setPopupContent(popupHtml);
+                } else {
+                    const marker = L.circleMarker([u.lat, u.lng], {
+                        radius: isMe ? 9 : 8,
+                        weight: 3,
+                        opacity: isOutside ? 0.45 : 1,
+                        fillOpacity: isOutside ? 0.25 : 0.85
+                    }).addTo(map).bindPopup(popupHtml);
+
+                    marker.__userId = u.id;
+                    markers[u.id] = marker;
+                }
+            });
+
+            if (currentGameCenter) centerMapOnEvent(map.getZoom() || 16);
+        });
+        });
+
+        function recenterMapOnMe() {
+            if (!navigator.geolocation) {
+                alert("Geolocalizzazione non disponibile su questo dispositivo.");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(p => {
+                const lat = p.coords.latitude;
+                const lng = p.coords.longitude;
+                map.setView([lat, lng], 17);
+
+                if (markers[myId]) {
+                    markers[myId].setLatLng([lat, lng]);
+                }
+            }, () => {
+                alert("Non riesco a leggere la tua posizione. Controlla i permessi GPS del browser.");
+            }, {
+                enableHighAccuracy: true,
+                timeout: 8000,
+                maximumAge: 10000
+            });
+        }
+
+        function resetAll() { if(confirm("RESET?")) socket.emit('adminRequestReset'); }
+        socket.on('outsideAreaWarning', d => {
+            const seconds = d && d.graceSeconds ? d.graceSeconds : 120;
+            showGeoWarning(`Sei uscito dal raggio dell'evento. Rimani visibile per circa ${Math.ceil(seconds / 60)} minuti: se rientri nell'area, torni automaticamente attivo.`);
+        });
+
+        socket.on('backInsideArea', () => {
+            hideGeoWarning();
+        });
+
+        socket.on('removedOutsideArea', () => {
+            alert("Sei rimasto fuori dall'area di gioco troppo a lungo. Sei stato rimosso dalla sessione.");
+            location.reload();
+        });
+
+        socket.on('gameDeleted', () => location.href = window.location.origin + (window.location.search.includes('admin') ? "?admin=1" : ""));
+    </script>
+</body>
+</html>

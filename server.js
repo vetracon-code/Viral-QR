@@ -1,169 +1,237 @@
 const express = require('express');
 const http = require('http');
+const path = require('path');
 const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static(__dirname));
-
-let gameState = {
-    name: "Viral Zone",
-    center: null,
-    radiusMeters: 150,
-    startedAt: null,
-    endTime: null,
-    active: false,
-    users: {}
-};
-
 const OUTSIDE_GRACE_MS = 2 * 60 * 1000;
 
+app.use(express.static(__dirname));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+let gameState = {
+  name: 'Lumina Live',
+  center: null,
+  radiusMeters: 150,
+  startedAt: null,
+  endTime: null,
+  active: false,
+  users: {}
+};
+
 function distanceMeters(a, b) {
-    if (!a || !b) return 0;
+  if (!a || !b) return 0;
 
-    const R = 6371000;
-    const lat1 = a.lat * Math.PI / 180;
-    const lat2 = b.lat * Math.PI / 180;
-    const dLat = (b.lat - a.lat) * Math.PI / 180;
-    const dLng = (b.lng - a.lng) * Math.PI / 180;
+  const R = 6371000;
+  const lat1 = a.lat * Math.PI / 180;
+  const lat2 = b.lat * Math.PI / 180;
+  const dLat = (b.lat - a.lat) * Math.PI / 180;
+  const dLng = (b.lng - a.lng) * Math.PI / 180;
 
-    const x = Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat1) * Math.cos(lat2) *
-        Math.sin(dLng / 2) ** 2;
+  const x =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) *
+    Math.sin(dLng / 2) ** 2;
 
-    return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+  return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
 
 function evaluateUserArea(socket, user) {
-    if (!gameState.active || !gameState.center || !gameState.radiusMeters || !user) return;
+  if (!gameState.active || !gameState.center || !user) return;
 
-    const dist = distanceMeters(gameState.center, { lat: user.lat, lng: user.lng });
-    const outside = dist > gameState.radiusMeters;
+  const dist = distanceMeters(gameState.center, {
+    lat: user.lat,
+    lng: user.lng
+  });
 
-    user.distanceFromCenter = Math.round(dist);
+  user.distanceFromCenter = Math.round(dist);
 
-    if (outside && !user.outsideArea) {
-        user.outsideArea = true;
-        user.outsideSince = Date.now();
-        socket.emit('outsideAreaWarning', {
-            graceSeconds: Math.round(OUTSIDE_GRACE_MS / 1000),
-            distanceMeters: user.distanceFromCenter,
-            radiusMeters: gameState.radiusMeters
-        });
-    }
+  const outside = dist > gameState.radiusMeters;
 
-    if (!outside && user.outsideArea) {
-        user.outsideArea = false;
-        user.outsideSince = null;
-        socket.emit('backInsideArea');
-    }
+  if (outside && !user.outsideArea) {
+    user.outsideArea = true;
+    user.outsideSince = Date.now();
+
+    socket.emit('outsideAreaWarning', {
+      graceSeconds: Math.round(OUTSIDE_GRACE_MS / 1000),
+      radiusMeters: gameState.radiusMeters,
+      distanceMeters: user.distanceFromCenter
+    });
+  }
+
+  if (!outside && user.outsideArea) {
+    user.outsideArea = false;
+    user.outsideSince = null;
+
+    socket.emit('backInsideArea');
+  }
+}
+
+function broadcastMap() {
+  io.emit('updateMap', gameState.users);
 }
 
 setInterval(() => {
-    const now = Date.now();
+  const now = Date.now();
+  let changed = false;
 
-    Object.values(gameState.users).forEach(user => {
-        if (user.outsideArea && user.outsideSince && now - user.outsideSince > OUTSIDE_GRACE_MS) {
-            const targetSocket = io.sockets.sockets.get(user.id);
-            if (targetSocket) {
-                targetSocket.emit('removedOutsideArea');
-            }
-            delete gameState.users[user.id];
-        }
-    });
+  Object.values(gameState.users).forEach(user => {
+    if (
+      user.outsideArea &&
+      user.outsideSince &&
+      now - user.outsideSince > OUTSIDE_GRACE_MS
+    ) {
+      const targetSocket = io.sockets.sockets.get(user.id);
+      if (targetSocket) {
+        targetSocket.emit('removedOutsideArea');
+      }
 
-    io.emit('updateMap', gameState.users);
+      delete gameState.users[user.id];
+      changed = true;
+    }
+  });
+
+  if (changed) broadcastMap();
 }, 15000);
 
-io.on('connection', (socket) => {
-    socket.emit('sync', gameState);
-    
-    socket.on('adminStart', (data) => {
-        let durationMs = data.unit === 'min' ? data.value * 60000 : data.value * 3600000;
+io.on('connection', socket => {
+  socket.emit('sync', gameState);
 
-        gameState.startedAt = Date.now();
-        gameState.endTime = gameState.startedAt + durationMs;
-        gameState.active = true;
-        gameState.name = data.name || "Lumina";
-        gameState.center = { lat: Number(data.lat), lng: Number(data.lng) };
-        gameState.radiusMeters = Math.max(20, Number(data.radiusMeters) || 150);
+  socket.on('adminStart', data => {
+    const value = Math.max(1, Number(data.value) || 60);
+    const durationMs = data.unit === 'hour'
+      ? value * 3600000
+      : value * 60000;
 
-        io.emit('timerStarted', {
-            startedAt: gameState.startedAt,
-            endTime: gameState.endTime,
-            name: gameState.name,
-            center: gameState.center,
-            radiusMeters: gameState.radiusMeters
-        });
+    gameState.name = data.name || 'Lumina Live';
+    gameState.startedAt = Date.now();
+    gameState.endTime = gameState.startedAt + durationMs;
+    gameState.active = true;
+    gameState.center = {
+      lat: Number(data.lat),
+      lng: Number(data.lng)
+    };
+    gameState.radiusMeters = Math.max(20, Number(data.radiusMeters) || 150);
+
+    io.emit('timerStarted', {
+      name: gameState.name,
+      startedAt: gameState.startedAt,
+      endTime: gameState.endTime,
+      center: gameState.center,
+      radiusMeters: gameState.radiusMeters
     });
 
-    socket.on('registerUser', (userData) => {
-        gameState.users[socket.id] = { 
-            id: socket.id, 
-            nick: userData.nick, 
-            lat: userData.lat, 
-            lng: userData.lng,
-            outsideArea: false,
-            outsideSince: null,
-            distanceFromCenter: null,
-            reactions: { '👍': 0, '❤️': 0, '🔥': 0, '🙌': 0, '😎': 0, '✨': 0 }
-        };
-        evaluateUserArea(socket, gameState.users[socket.id]);
-        socket.emit('profileCreated', { id: socket.id, user: gameState.users[socket.id] });
-        io.emit('updateMap', gameState.users);
+    broadcastMap();
+  });
+
+  socket.on('registerUser', userData => {
+    gameState.users[socket.id] = {
+      id: socket.id,
+      nick: userData.nick || 'Player',
+      role: userData.role || 'player',
+      lat: Number(userData.lat),
+      lng: Number(userData.lng),
+      outsideArea: false,
+      outsideSince: null,
+      distanceFromCenter: null
+    };
+
+    evaluateUserArea(socket, gameState.users[socket.id]);
+
+    socket.emit('profileCreated', {
+      id: socket.id,
+      user: gameState.users[socket.id],
+      game: gameState
     });
 
-    socket.on('updatePosition', (pos) => {
-        const user = gameState.users[socket.id];
-        if (!user || !pos || typeof pos.lat !== 'number' || typeof pos.lng !== 'number') return;
+    broadcastMap();
+  });
 
-        user.lat = pos.lat;
-        user.lng = pos.lng;
+  socket.on('updatePosition', pos => {
+    const user = gameState.users[socket.id];
+    if (!user || !pos) return;
 
-        evaluateUserArea(socket, user);
-        io.emit('updateMap', gameState.users);
+    user.lat = Number(pos.lat);
+    user.lng = Number(pos.lng);
+
+    evaluateUserArea(socket, user);
+    broadcastMap();
+  });
+
+  socket.on('sendLike', data => {
+    const targetId = data && data.to;
+    const type = data && data.type;
+    const sender = gameState.users[socket.id];
+    const target = gameState.users[targetId];
+
+    if (!sender) {
+      socket.emit('interactionError', { message: 'Devi prima entrare nel gioco.' });
+      return;
+    }
+
+    if (!targetId || !type || !target) {
+      socket.emit('interactionError', { message: 'Utente non disponibile.' });
+      return;
+    }
+
+    if (sender.outsideArea) {
+      socket.emit('interactionError', {
+        message: "Sei fuori dall'area di gioco. Rientra nel raggio dell'evento per interagire."
+      });
+      return;
+    }
+
+    if (target.outsideArea) {
+      socket.emit('interactionError', {
+        message: 'Questo utente è temporaneamente fuori area.'
+      });
+      return;
+    }
+
+    const targetSocket = io.sockets.sockets.get(targetId);
+    if (!targetSocket) {
+      socket.emit('interactionError', { message: 'Utente non più online.' });
+      return;
+    }
+
+    targetSocket.emit('receiveLike', {
+      from: socket.id,
+      fromNick: sender.nick || 'Anonimo',
+      type
     });
+  });
 
-    socket.on('sendLike', (data) => {
-        const targetId = data && data.to;
-        const fromId = data && data.from;
-        const type = data && data.type;
+  socket.on('adminRequestReset', () => {
+    gameState = {
+      name: 'Lumina Live',
+      center: null,
+      radiusMeters: 150,
+      startedAt: null,
+      endTime: null,
+      active: false,
+      users: {}
+    };
 
-        if (!targetId || !fromId || !type) return;
+    io.emit('gameDeleted');
+  });
 
-        const sender = gameState.users[fromId];
-        const targetSocket = io.sockets.sockets.get(targetId);
-
-        if (!sender || !targetSocket) {
-            socket.emit('interactionError', { message: 'Utente non più disponibile.' });
-            return;
-        }
-
-        targetSocket.emit('receiveLike', {
-            from: fromId,
-            fromNick: sender.nick || 'Anonimo',
-            type
-        });
-    });
-
-    socket.on('adminRequestReset', () => {
-        gameState.users = {};
-        gameState.active = false;
-        gameState.startedAt = null;
-        gameState.endTime = null;
-        gameState.center = null;
-        gameState.radiusMeters = 150;
-        gameState.name = "Viral Zone";
-        io.emit('gameDeleted');
-    });
-
-    socket.on('disconnect', () => {
-        delete gameState.users[socket.id];
-        io.emit('updateMap', gameState.users);
-    });
+  socket.on('disconnect', () => {
+    delete gameState.users[socket.id];
+    broadcastMap();
+  });
 });
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => console.log('Server Pronto'));
+server.listen(PORT, () => {
+  console.log(`Lumina Live server ready on port ${PORT}`);
+});
