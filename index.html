@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Viral QR Test</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #121212; color: white; padding: 50px; }
+        #timer { font-size: 3em; color: #ff007f; margin: 20px; font-weight: bold; }
+        .btn { padding: 20px 40px; font-size: 1.5em; cursor: pointer; background: #00d4ff; border: none; border-radius: 50px; color: #000; font-weight: bold; box-shadow: 0 4px 15px rgba(0,212,255,0.4); }
+        .btn:hover { background: #00b8e6; }
+    </style>
+</head>
+<body>
+    <h1>Viral QR - Test Mode</h1>
+    <div id="timer">00:00:00</div>
+    <button class="btn" onclick="startTimer()">AVVIA TIMER 60 MIN</button>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const socket = io('http://localhost:3001');
+        
+        function startTimer() {
+            socket.emit('createMaster', 60);
+        }
+
+        socket.on('timerStarted', (endTime) => {
+            setInterval(() => {
+                const now = Date.now();
+                const diff = endTime - now;
+                if (diff <= 0) {
+                    document.getElementById('timer').innerText = "SCADUTO";
+                    return;
+                }
+                const minutes = Math.floor((diff % 3600000) / 60000);
+                const seconds = Math.floor((diff % 60000) / 1000);
+                document.getElementById('timer').innerText = minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+            }, 1000);
+        });
+
+        socket.on('init', (data) => {
+            if(data.globalEndTime) {
+                // Se il timer è già partito, lo mostriamo subito
+                socket.emit('createMaster', 0); 
+            }
+        });
+    </script>
+</body>
+</html>
