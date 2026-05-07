@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumina App</title>
+    <title>Lumina Live</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { --accent: #D4AF37; --primary: #1A237E; --danger: #C62828; }
-        body { font-family: sans-serif; margin:0; background: #F8F9FA; color: #222; }
-        .header { background: var(--primary); color: white; padding: 20px; text-align: center; position: relative; }
-        .stats { position: absolute; top: 10px; right: 10px; font-size: 0.7rem; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 10px; }
-        #map { height: 350px; width: 100%; border-bottom: 2px solid var(--primary); }
-        .content { padding: 20px; max-width: 500px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .btn { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 30px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+        body { font-family: -apple-system, sans-serif; margin:0; background: #f0f2f5; }
+        .header { background: var(--primary); color: white; padding: 15px; text-align: center; position: relative; z-index: 1000; }
+        #map { height: 400px; width: 100%; background: #eee; border-bottom: 3px solid var(--accent); }
+        .content { padding: 15px; max-width: 500px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .btn { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; margin-bottom: 10px; font-size: 1rem; }
         .hidden { display: none; }
-        input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; }
-        #qr-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:2000; display:none; flex-direction:column; align-items:center; justify-content:center; }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        .stats { position: absolute; top: 5px; right: 10px; font-size: 0.8rem; opacity: 0.8; }
+        #qr-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:none; flex-direction:column; align-items:center; justify-content:center; }
     </style>
 </head>
 <body>
@@ -24,129 +24,152 @@
         <canvas id="qr-canvas"></canvas>
         <p>Tocca per chiudere</p>
     </div>
+
     <div class="header">
         <div id="user-count" class="stats">Online: 0</div>
-        <h2 id="display-title" style="margin:0">LUMINA</h2>
-        <div id="timer-display" style="color:var(--accent); margin-top:5px; font-weight:bold;">...</div>
+        <h2 id="display-title" style="margin:0; font-size: 1.2rem;">LUMINA</h2>
+        <div id="timer-display" style="color:var(--accent); font-size: 0.9rem;">In attesa dell'host...</div>
     </div>
+
     <div id="map"></div>
+
     <div class="content">
-        <div id="admin-section" class="card hidden">
-            <h3>Configurazione Host</h3>
-            <input type="text" id="adm-event-name" placeholder="Nome Evento">
-            <input type="text" id="adm-nick" placeholder="Tuo Nickname (Host)">
-            <button class="btn" style="background:#455A64" onclick="useGPS()">1. USA MIA POSIZIONE GPS</button>
-            <input type="text" id="adm-address" placeholder="Oppure scrivi indirizzo">
-            <button class="btn" style="background:var(--primary)" onclick="useAddr()">2. USA QUESTO INDIRIZZO</button>
+        <div id="admin-setup" class="card hidden">
+            <h3>Configurazione Area</h3>
+            <input type="text" id="adm-event-name" placeholder="Nome dell'Evento">
+            <input type="text" id="adm-nick" placeholder="Il tuo Nickname (Host)">
+            <p style="font-size: 0.8rem; color: #666;">Scegli il centro del gioco:</p>
+            <button class="btn" style="background:#28a745" onclick="setupGPS()">USA MIA POSIZIONE ATTUALE</button>
+            <input type="text" id="adm-address" placeholder="Oppure inserisci un indirizzo">
+            <button class="btn" style="background:var(--primary)" onclick="setupAddr()">USA QUESTO INDIRIZZO</button>
         </div>
-        <div id="reg-section" class="card">
-            <h3>Benvenuto</h3>
-            <input type="text" id="nickname" placeholder="Inserisci il tuo Nickname">
-            <button class="btn" onclick="registerUser()">ENTRA NEL GIOCO</button>
+
+        <div id="player-reg" class="card">
+            <h3>Partecipa</h3>
+            <input type="text" id="nickname" placeholder="Tuo Nickname">
+            <button class="btn" onclick="joinAsPlayer()">ENTRA NEL GIOCO</button>
         </div>
-        <div id="profile-section" class="hidden">
+
+        <div id="main-dashboard" class="hidden">
             <div class="card">
-                <h3 id="user-display-name" style="color:var(--primary); margin-top:0;"></h3>
+                <h3 id="user-hello" style="margin-top:0; color:var(--primary);"></h3>
                 <button class="btn" onclick="showQR()">MOSTRA IL MIO QR</button>
-                <div id="admin-controls" class="hidden" style="margin-top:20px; border-top:1px solid #eee; padding-top:10px;">
-                    <button class="btn" style="background:#444" onclick="backToSettings()">MODIFICA AREA</button>
-                    <button class="btn" style="background:var(--danger)" onclick="doReset()">CHIUDI TUTTO</button>
+                
+                <div id="admin-powers" class="hidden" style="margin-top:20px; border-top:2px solid #eee; padding-top:15px;">
+                    <button class="btn" style="background:#444" onclick="toggleSetup()">MODIFICA POSIZIONE / MINUTI</button>
+                    <button class="btn" style="background:var(--danger)" onclick="resetAll()">RESET TOTALE GIOCO</button>
                 </div>
             </div>
         </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const socket = io();
-        let map, isAdmin = false, myId = "", otherMarkers = {};
-        map = L.map('map', {zoomControl:false}).setView([45.46, 9.19], 13);
-        L.tileLayer('https://{s}.tile.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+        let map, isAdmin = false, myId = "", markers = {};
 
+        // Inizializzazione Mappa (Default su Milano per mostrare che il frame esiste)
+        map = L.map('map', { zoomControl: false }).setView([45.4642, 9.1900], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Controllo se è Admin
         if (window.location.search.includes('admin')) {
             isAdmin = true;
-            document.getElementById('admin-section').classList.remove('hidden');
-            document.getElementById('reg-section').classList.add('hidden');
+            document.getElementById('admin-setup').classList.remove('hidden');
+            document.getElementById('player-reg').classList.add('hidden');
         }
 
-        function useGPS() { 
+        // --- FUNZIONI ADMIN ---
+        function setupGPS() {
             navigator.geolocation.getCurrentPosition(p => {
-                const lat = p.coords.latitude;
-                const lng = p.coords.longitude;
-                map.setView([lat, lng], 17);
-                start(lat, lng);
-            }, (err) => alert("Errore GPS: " + err.message)); 
-        }
-
-        async function useAddr() {
-            const a = document.getElementById('adm-address').value;
-            if(!a) return alert("Inserisci un indirizzo");
-            const r = await fetch("https://nominatim.openstreetmap.org/search?format=json&q="+encodeURIComponent(a));
-            const d = await r.json();
-            if(d.length > 0) {
-                const lat = parseFloat(d[0].lat);
-                const lng = parseFloat(d[0].lon);
-                map.setView([lat, lng], 17);
-                start(lat, lng);
-            } else alert("Indirizzo non trovato");
-        }
-
-        function start(lat, lng) {
-            const name = document.getElementById('adm-event-name').value || "Lumina";
-            const nick = document.getElementById('adm-nick').value || "Host";
-            socket.emit('adminStart', { name, value: 60, unit: "min", lat, lng });
-            socket.emit('registerUser', { nick, lat, lng });
-            document.getElementById('admin-section').classList.add('hidden');
-        }
-
-        function registerUser() {
-            navigator.geolocation.getCurrentPosition(p => {
-                const nick = document.getElementById('nickname').value || "Guest";
-                socket.emit('registerUser', { nick, lat: p.coords.latitude, lng: p.coords.longitude });
-                document.getElementById('reg-section').classList.add('hidden');
-                map.setView([p.coords.latitude, p.coords.longitude], 17);
+                completeSetup(p.coords.latitude, p.coords.longitude);
             }, () => alert("Attiva il GPS"));
         }
 
+        async function setupAddr() {
+            const addr = document.getElementById('adm-address').value;
+            if(!addr) return alert("Inserisci un indirizzo");
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}`);
+            const data = await res.json();
+            if(data.length > 0) completeSetup(parseFloat(data[0].lat), parseFloat(data[0].lon));
+            else alert("Indirizzo non trovato");
+        }
+
+        function completeSetup(lat, lng) {
+            const eventName = document.getElementById('adm-event-name').value || "Evento Lumina";
+            const hostNick = document.getElementById('adm-nick').value || "Host";
+            
+            // 1. Avvia il timer e l'area sul server
+            socket.emit('adminStart', { name: eventName, value: 60, unit: "min", lat, lng });
+            // 2. Entra automaticamente come giocatore
+            socket.emit('registerUser', { nick: hostNick, lat, lng });
+            
+            document.getElementById('admin-setup').classList.add('hidden');
+            map.setView([lat, lng], 16);
+        }
+
+        // --- FUNZIONI PLAYER ---
+        function joinAsPlayer() {
+            navigator.geolocation.getCurrentPosition(p => {
+                const nick = document.getElementById('nickname').value || "Giocatore";
+                socket.emit('registerUser', { nick, lat: p.coords.latitude, lng: p.coords.longitude });
+                document.getElementById('player-reg').classList.add('hidden');
+                map.setView([p.coords.latitude, p.coords.longitude], 16);
+            }, () => alert("Il GPS è necessario per giocare"));
+        }
+
+        // --- EVENTI SOCKET ---
         socket.on('profileCreated', d => {
             myId = d.id;
-            document.getElementById('profile-section').classList.remove('hidden');
-            document.getElementById('user-display-name').innerText = d.user.nick + (isAdmin ? " (Admin)" : "");
-            if(isAdmin) document.getElementById('admin-controls').classList.remove('hidden');
+            document.getElementById('main-dashboard').classList.remove('hidden');
+            document.getElementById('user-hello').innerText = "Ciao, " + d.user.nick;
+            if(isAdmin) document.getElementById('admin-powers').classList.remove('hidden');
         });
 
-        socket.on('updateStats', count => { 
-            document.getElementById('user-count').innerText = "Online: " + count; 
-        });
-
-        function showQR() {
-            QRCode.toCanvas(document.getElementById('qr-canvas'), window.location.origin + "/?target=" + myId, { width: 280 }, (err) => {
-                if(!err) document.getElementById('qr-overlay').style.display = "flex";
-            });
-        }
-
-        function backToSettings() {
-            document.getElementById('admin-section').classList.remove('hidden');
-            document.getElementById('profile-section').classList.add('hidden');
-        }
-
-        function doReset() { if(confirm("Chiudere tutto?")) socket.emit('adminRequestReset'); }
-        
-        socket.on('gameDeleted', () => { 
-            location.href = window.location.origin + (isAdmin ? "?admin=1" : ""); 
+        socket.on('updateStats', count => {
+            document.getElementById('user-count').innerText = "Online: " + count;
         });
 
         socket.on('updateMap', users => {
             Object.values(users).forEach(u => {
                 if(u.id !== socket.id) {
-                    if(otherMarkers[u.id]) otherMarkers[u.id].setLatLng([u.lat, u.lng]);
-                    else otherMarkers[u.id] = L.marker([u.lat, u.lng]).addTo(map).bindPopup(u.nick);
+                    if(markers[u.id]) {
+                        markers[u.id].setLatLng([u.lat, u.lng]);
+                    } else {
+                        markers[u.id] = L.marker([u.lat, u.lng]).addTo(map).bindPopup(u.nick);
+                    }
                 }
             });
         });
 
-        socket.on('timerStarted', d => { document.getElementById('display-title').innerText = d.name; });
+        socket.on('timerStarted', d => {
+            document.getElementById('display-title').innerText = d.name;
+            document.getElementById('timer-display').innerText = "Gara in corso";
+        });
+
+        // --- UTILS ---
+        function showQR() {
+            QRCode.toCanvas(document.getElementById('qr-canvas'), window.location.origin + "/?target=" + myId, { width: 250 });
+            document.getElementById('qr-overlay').style.display = "flex";
+        }
+
+        function toggleSetup() {
+            document.getElementById('admin-setup').classList.toggle('hidden');
+        }
+
+        function resetAll() {
+            if(confirm("Vuoi resettare tutto? Tutti i giocatori verranno espulsi.")) {
+                socket.emit('adminRequestReset');
+            }
+        }
+
+        socket.on('gameDeleted', () => {
+            location.href = window.location.origin + (isAdmin ? "?admin=1" : "");
+        });
     </script>
 </body>
 </html>
