@@ -1198,24 +1198,6 @@
       text-align: right;
     }
 
-  
-    .geo-admin-warning {
-      margin: 12px 0;
-      padding: 11px;
-      border-radius: 14px;
-      background: #fff7dc;
-      color: #5f4300;
-      font-size: .82rem;
-      line-height: 1.35;
-      font-weight: 800;
-      text-align: left;
-      display: none;
-    }
-
-    .geo-admin-warning.visible {
-      display: block;
-    }
-
   </style>
 </head>
 
@@ -1368,13 +1350,6 @@
       <div id="address-confirm-box" class="hidden"></div>
 
       <button class="btn btn-gold" onclick="activateArea()">ATTIVA AREA GIOCO</button>
-
-      <div id="geo-admin-warning" class="geo-admin-warning">
-        Posizione non disponibile o non autorizzata. Puoi riprovare concedendo la localizzazione, oppure attivare una sessione online senza raggio.
-      </div>
-
-      <button class="btn" style="background:#1A237E;" onclick="activateOnlineSession()">ATTIVA SESSIONE ONLINE SENZA RAGGIO</button>
-
 
       <div id="admin-join-section" class="hidden" style="margin-top:18px;">
         <div class="admin-field">
@@ -1639,14 +1614,7 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">
-    window.__luminaGeoErrorPatch = true;
-    window.addEventListener('error', function(e) {
-      if (String(e.message || '').toLowerCase().includes('geolocation')) {
-        showAdminGeoWarning();
-      }
-    });
-</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -1770,53 +1738,6 @@
       const meters = unit === 'km' ? value * 1000 : value;
       return Math.max(20, Math.round(meters));
     }
-
-
-    function getAdminSessionNameSafe() {
-      return document.getElementById('adm-event-name')?.value || 'Lumina Live';
-    }
-
-    function getAdminDurationSafe() {
-      const valueEl = document.getElementById('adm-duration-value');
-      const unitEl = document.getElementById('adm-duration-unit');
-
-      const value = Number(valueEl?.value || 60);
-      const unit = unitEl?.value || 'min';
-
-      return {
-        value: Number.isFinite(value) && value > 0 ? value : 60,
-        unit
-      };
-    }
-
-    function showAdminGeoWarning() {
-      const box = document.getElementById('geo-admin-warning');
-      if (box) box.classList.add('visible');
-    }
-
-    function activateOnlineSession() {
-      const name = getAdminSessionNameSafe();
-      const duration = getAdminDurationSafe();
-
-      socket.emit('adminStart', {
-        name,
-        value: duration.value,
-        unit: duration.unit,
-        radiusDisabled: true,
-        radiusMeters: null,
-        lat: 45.4642,
-        lng: 9.19
-      });
-
-      const joinSection = document.getElementById('admin-join-section');
-      const inviteSection = document.getElementById('admin-invite-section');
-
-      if (joinSection) joinSection.classList.remove('hidden');
-      if (inviteSection) inviteSection.classList.remove('hidden');
-
-      alert('Sessione online attivata senza raggio. Gli utenti possono entrare dal link o dal QR anche se la posizione non è disponibile.');
-    }
-
 
     async function activateArea() {
       const name = document.getElementById('adm-event-name').value.trim() || 'Lumina Live';
