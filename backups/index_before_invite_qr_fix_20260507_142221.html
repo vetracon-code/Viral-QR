@@ -409,165 +409,10 @@
         height: 420px;
       }
     }
-  
-    /* Fix: qrcodejs può generare più nodi. Ne mostriamo sempre uno solo. */
-    #qr-box canvas,
-    #invite-qr-box canvas {
-      display: none !important;
-    }
-
-    #qr-box img,
-    #invite-qr-box img {
-      display: block !important;
-      width: 180px !important;
-      height: 180px !important;
-    }
-
-    #invite-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(255,255,255,.98);
-      z-index: 10020;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 24px 16px;
-      overflow-y: auto;
-    }
-
-    .invite-card {
-      width: min(460px, 100%);
-      background: white;
-      border-radius: 22px;
-      box-shadow: 0 8px 26px rgba(0,0,0,.16);
-      padding: 22px;
-      margin-top: 14px;
-      text-align: center;
-      border: 1px solid #ececec;
-    }
-
-    .invite-title {
-      color: var(--primary);
-      font-size: 1.24rem;
-      line-height: 1.25;
-      margin: 0 0 10px 0;
-      font-weight: 950;
-    }
-
-    .invite-subtitle {
-      font-size: .94rem;
-      line-height: 1.35;
-      margin: 0 0 18px 0;
-      color: #333;
-      font-weight: 700;
-    }
-
-    #invite-qr-box {
-      width: 190px;
-      height: 190px;
-      margin: 16px auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: white;
-      border-radius: 20px;
-      padding: 5px;
-      box-shadow: 0 4px 16px rgba(0,0,0,.12);
-    }
-
-    .share-buttons {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 14px;
-      opacity: .35;
-      filter: grayscale(1);
-      pointer-events: none;
-      transition: all .25s ease;
-    }
-
-    .share-buttons.active {
-      opacity: 1;
-      filter: grayscale(0);
-      pointer-events: auto;
-    }
-
-    .share-btn {
-      border: none;
-      border-radius: 13px;
-      padding: 12px 10px;
-      font-weight: 900;
-      cursor: pointer;
-      color: white;
-      background: var(--primary);
-      font-size: .84rem;
-    }
-
-    .share-btn.gold {
-      background: var(--accent);
-    }
-
-    .invite-note {
-      font-size: .78rem;
-      color: #555;
-      margin-top: 12px;
-      line-height: 1.35;
-    }
-
-    #new-arrival-banner {
-      position: fixed;
-      top: 62px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10030;
-      background: var(--accent);
-      color: white;
-      padding: 10px 18px;
-      border-radius: 999px;
-      font-weight: 950;
-      letter-spacing: .05em;
-      box-shadow: 0 6px 22px rgba(0,0,0,.22);
-      display: none;
-      animation: luminaBlink .28s linear infinite alternate;
-    }
-
-    @keyframes luminaBlink {
-      from { opacity: .35; transform: translateX(-50%) scale(.96); }
-      to { opacity: 1; transform: translateX(-50%) scale(1.04); }
-    }
-
   </style>
 </head>
 
 <body>
-  <div id="new-arrival-banner">NUOVO ARRIVO</div>
-
-  <div id="invite-overlay">
-    <div class="invite-card">
-      <h2 class="invite-title">Vuoi entrare nel gioco?</h2>
-      <p class="invite-subtitle">Scannerizza il QR: è sicuro, anonimo e non serve scaricare nessuna App.</p>
-
-      <div id="invite-qr-box"></div>
-
-      <div class="admin-field" style="margin-top:18px;">
-        <label>Inserisci il tuo nick per attivare la condivisione</label>
-        <input type="text" id="invite-nick" placeholder="Il tuo nickname" oninput="handleInviteNickInput()">
-      </div>
-
-      <div id="invite-share-buttons" class="share-buttons">
-        <button class="share-btn gold" onclick="copyJoinLink()">COPIA LINK</button>
-        <button class="share-btn" onclick="nativeShareJoinLink()">CONDIVIDI</button>
-      </div>
-
-      <p class="invite-note">
-        Il QR invita gli altri a entrare nella sessione Lumina. Il nickname serve solo per partecipare al gioco.
-      </p>
-
-      <button class="btn" style="background:#666; margin-top:18px;" onclick="closeInviteOverlay()">CHIUDI</button>
-    </div>
-  </div>
-
   <div id="overlay">
     <div id="scanner-container" class="hidden">
       <div id="reader"></div>
@@ -652,10 +497,9 @@
     </div>
 
     <div id="player-reg" class="card">
-      <h3 id="player-reg-title">Benvenuto</h3>
-      <p id="player-reg-subtitle" style="margin-top:-4px; color:#444; font-size:.92rem; line-height:1.35;"></p>
-      <input type="text" id="nickname" placeholder="Tuo Nickname" oninput="handlePlayerNickInput()" style="width:100%; padding:13px; margin-bottom:12px; border-radius:12px; border:1px solid #ddd;">
-      <button id="player-join-btn" class="btn btn-gold" onclick="joinGame('player')">ENTRA NEL GIOCO</button>
+      <h3>Benvenuto</h3>
+      <input type="text" id="nickname" placeholder="Tuo Nickname" style="width:100%; padding:13px; margin-bottom:12px; border-radius:12px; border:1px solid #ddd;">
+      <button class="btn btn-gold" onclick="joinGame('player')">ENTRA NEL GIOCO</button>
     </div>
 
     <div id="main-dashboard" class="hidden">
@@ -682,7 +526,6 @@
         <div id="notif-list" class="hidden"></div>
 
         <button class="btn btn-gold" onclick="startScanner()">SCANNERIZZA QUALCUNO</button>
-        <button class="btn" style="background:#1A237E;" onclick="showInviteQr()">MOSTRA QR PER ENTRARE NEL GIOCO</button>
 
         <div id="admin-powers" class="hidden">
           <button class="btn btn-red" onclick="resetAll()">RESET SESSIONE</button>
@@ -727,10 +570,7 @@
     let eventCircle = null;
     let myGeoWatchId = null;
 
-    const urlParams = new URLSearchParams(window.location.search);
-    let pendingTargetFromUrl = urlParams.get('target');
-    const isJoinInvite = urlParams.get('join') === '1';
-    const joinLink = window.location.origin + '/?join=1';
+    let pendingTargetFromUrl = new URLSearchParams(window.location.search).get('target');
 
     const map = L.map('map', { zoomControl: true }).setView([45.4642, 9.19], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -742,18 +582,6 @@
       document.getElementById('admin-setup').classList.remove('hidden');
       document.getElementById('player-reg').classList.add('hidden');
     }
-
-
-    if (isJoinInvite) {
-      const title = document.getElementById('player-reg-title');
-      const subtitle = document.getElementById('player-reg-subtitle');
-
-      if (title) title.innerText = 'Vuoi entrare nel gioco?';
-      if (subtitle) subtitle.innerText = 'Inserisci un nick: è sicuro, anonimo e non serve scaricare nessuna App.';
-
-      handlePlayerNickInput();
-    }
-
 
     function setLocationMode(mode) {
       locationMode = mode;
@@ -969,166 +797,6 @@
       }
     });
 
-
-    function showInviteQr() {
-      const box = document.getElementById('invite-qr-box');
-      const nick = document.getElementById('invite-nick');
-
-      document.getElementById('invite-overlay').style.display = 'flex';
-
-      if (nick) {
-        nick.value = '';
-      }
-
-      handleInviteNickInput();
-
-      if (box) {
-        box.innerHTML = '';
-
-        try {
-          new QRCode(box, {
-            text: joinLink,
-            width: 180,
-            height: 180,
-            colorDark: '#000000',
-            colorLight: '#ffffff',
-            correctLevel: QRCode.CorrectLevel.H
-          });
-
-          setTimeout(() => keepOnlyOneQrNode(box), 80);
-        } catch (e) {
-          console.error(e);
-          box.innerHTML = '<div style="font-size:.85rem;color:#1A237E;">QR invito non disponibile</div>';
-        }
-      }
-    }
-
-    function closeInviteOverlay() {
-      document.getElementById('invite-overlay').style.display = 'none';
-    }
-
-    function handleInviteNickInput() {
-      const value = (document.getElementById('invite-nick')?.value || '').trim();
-      const buttons = document.getElementById('invite-share-buttons');
-
-      if (!buttons) return;
-
-      buttons.classList.toggle('active', value.length >= 2);
-    }
-
-    function copyJoinLink() {
-      const nick = (document.getElementById('invite-nick')?.value || '').trim();
-
-      if (nick.length < 2) {
-        alert('Inserisci prima il tuo nick.');
-        return;
-      }
-
-      navigator.clipboard.writeText(joinLink).then(() => {
-        alert('Link copiato.');
-      }).catch(() => {
-        prompt('Copia questo link:', joinLink);
-      });
-    }
-
-    function nativeShareJoinLink() {
-      const nick = (document.getElementById('invite-nick')?.value || '').trim();
-
-      if (nick.length < 2) {
-        alert('Inserisci prima il tuo nick.');
-        return;
-      }
-
-      if (navigator.share) {
-        navigator.share({
-          title: 'Lumina Live',
-          text: 'Vuoi entrare nel gioco? È sicuro e anonimo.',
-          url: joinLink
-        }).catch(() => {});
-      } else {
-        copyJoinLink();
-      }
-    }
-
-    function keepOnlyOneQrNode(box) {
-      if (!box) return;
-
-      const nodes = Array.from(box.children);
-      let visibleFound = false;
-
-      nodes.forEach(node => {
-        const tag = node.tagName ? node.tagName.toLowerCase() : '';
-
-        if ((tag === 'img' || tag === 'canvas') && !visibleFound) {
-          node.style.display = 'block';
-          visibleFound = true;
-        } else if (tag === 'img' || tag === 'canvas') {
-          node.style.display = 'none';
-        }
-      });
-    }
-
-    function playNotificationSound() {
-      try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const ctx = new AudioContext();
-
-        const o1 = ctx.createOscillator();
-        const g1 = ctx.createGain();
-
-        o1.type = 'sine';
-        o1.frequency.setValueAtTime(880, ctx.currentTime);
-        g1.gain.setValueAtTime(0.001, ctx.currentTime);
-        g1.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 0.015);
-        g1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
-
-        o1.connect(g1);
-        g1.connect(ctx.destination);
-        o1.start();
-        o1.stop(ctx.currentTime + 0.2);
-
-        setTimeout(() => {
-          const o2 = ctx.createOscillator();
-          const g2 = ctx.createGain();
-
-          o2.type = 'sine';
-          o2.frequency.setValueAtTime(1175, ctx.currentTime);
-          g2.gain.setValueAtTime(0.001, ctx.currentTime);
-          g2.gain.exponentialRampToValueAtTime(0.14, ctx.currentTime + 0.015);
-          g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.16);
-
-          o2.connect(g2);
-          g2.connect(ctx.destination);
-          o2.start();
-          o2.stop(ctx.currentTime + 0.18);
-        }, 160);
-      } catch (e) {
-        console.warn('Audio not available', e);
-      }
-    }
-
-    function flashNewArrival() {
-      const banner = document.getElementById('new-arrival-banner');
-      if (!banner) return;
-
-      banner.style.display = 'block';
-
-      setTimeout(() => {
-        banner.style.display = 'none';
-      }, 2000);
-    }
-
-    function handlePlayerNickInput() {
-      const input = document.getElementById('nickname');
-      const btn = document.getElementById('player-join-btn');
-      if (!input || !btn) return;
-
-      const active = input.value.trim().length >= 2;
-      btn.style.opacity = active ? '1' : '.55';
-      btn.style.filter = active ? 'none' : 'grayscale(1)';
-    }
-
-
     function joinGame(type) {
       const nick = type === 'admin'
         ? document.getElementById('adm-nick').value.trim() || 'Admin'
@@ -1215,8 +883,6 @@
           colorLight: '#ffffff',
           correctLevel: QRCode.CorrectLevel.H
         });
-
-        setTimeout(() => keepOnlyOneQrNode(qrBox), 80);
       } catch (e) {
         console.error(e);
         qrBox.style.display = 'none';
@@ -1359,8 +1025,6 @@
     socket.on('receiveLike', d => {
       interactionsReceived.push(d);
       updateCounters();
-      playNotificationSound();
-      flashNewArrival();
     });
 
     socket.on('interactionError', d => {
