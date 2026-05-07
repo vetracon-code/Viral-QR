@@ -8,10 +8,12 @@ const io = new Server(server);
 
 app.use(express.static(__dirname));
 
+const randomNicks = ["EcoFantasma", "StellaRandagia", "LampoNascosto", "VentoLibero", "NebbiaArgentea", "ScattoRapido", "OrizzonteBlu", "MisteroPuro"];
+
 let gameState = {
     endTime: null,
     active: false,
-    users: {} // Struttura: { socketId: { nick, reactions: { '❤️': 0, '👍': 0, ... } } }
+    users: {}
 };
 
 io.on('connection', (socket) => {
@@ -28,26 +30,34 @@ io.on('connection', (socket) => {
     });
 
     socket.on('registerUser', (userData) => {
+        let finalNick = userData.nick.trim();
+        if (!finalNick) {
+            finalNick = randomNicks[Math.floor(Math.random() * randomNicks.length)] + Math.floor(Math.random() * 100);
+        }
+        
         gameState.users[socket.id] = { 
-            nick: userData.nick, 
+            id: socket.id,
+            nick: finalNick, 
             reactions: { '👍': 0, '❤️': 0, '🔥': 0, '🙌': 0, '😎': 0, '✨': 0 } 
         };
         socket.emit('profileCreated', { id: socket.id, user: gameState.users[socket.id] });
-        io.emit('updateUsers', gameState.users);
     });
 
     socket.on('sendReaction', (data) => {
-        // data = { toId: 'socket_id', icon: '❤️', fromNick: 'Pippo' }
+        // data: { toId, icon, fromId, fromNick }
         if (gameState.users[data.toId]) {
             gameState.users[data.toId].reactions[data.icon]++;
-            io.emit('reactionUpdate', { 
-                toId: data.toId, 
-                reactions: gameState.users[data.toId].reactions,
-                log: `${data.fromNick} ha inviato ${data.icon}`
+            // Invia la notifica specifica al destinatario per permettergli di ricambiare
+            io.to(data.toId).emit('receiveNotification', {
+                fromId: data.fromId,
+                fromNick: data.fromNick,
+                icon: data.icon
             });
+            // Aggiorna i contatori globali per il destinatario
+            io.to(data.toId).emit('updateMyReactions', gameState.users[data.toId].reactions);
         }
     });
 });
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => console.log('Server Social pronto'));
+server.listen(PORT, () => console.log('Server con Ricambia pronto'));

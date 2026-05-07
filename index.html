@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Viral QR Social</title>
     <style>
-        :root { --ws-green: #25D366; --ws-bg: #f0f2f5; --ws-dark: #075E54; }
+        :root { --ws-green: #25D366; --ws-bg: #f0f2f5; --ws-dark: #075E54; --ws-light-green: #dcf8c6; }
         body { font-family: sans-serif; background: var(--ws-bg); margin: 0; display: flex; justify-content: center; }
         .app-container { width: 100%; max-width: 450px; background: white; min-height: 100vh; display: flex; flex-direction: column; }
         .header { background: var(--ws-dark); color: white; padding: 15px; text-align: center; font-weight: bold; position: sticky; top: 0; z-index: 10; }
@@ -14,17 +14,17 @@
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
         .btn-main { background: var(--ws-green); color: white; border: none; padding: 15px; width: 100%; border-radius: 25px; font-weight: bold; cursor: pointer; }
         
-        /* Sistema Reazioni */
         .reaction-grid { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
-        .item { display: flex; flex-direction: column; align-items: center; cursor: pointer; background: #f8f9fa; padding: 8px; border-radius: 10px; min-width: 50px; }
+        .item { display: flex; flex-direction: column; align-items: center; background: #f8f9fa; padding: 8px; border-radius: 10px; min-width: 55px; border: 1px solid #eee; }
         .item span { font-size: 1.5rem; }
-        .count { font-size: 0.8rem; font-weight: bold; color: #555; }
+        .count { font-size: 0.9rem; font-weight: bold; color: var(--ws-dark); }
 
-        /* Log Interazioni */
-        #interaction-log { text-align: left; font-size: 0.9rem; color: #666; max-height: 150px; overflow-y: auto; padding: 10px; background: #fff; border-radius: 10px; border: 1px solid #eee; }
-        .log-entry { border-bottom: 1px solid #eee; padding: 5px 0; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* Notifiche Ricambia */
+        .notif-card { background: var(--ws-light-green); padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; border-left: 4px solid var(--ws-green); }
+        .btn-reciproca { background: var(--ws-dark); color: white; border: none; padding: 5px 12px; border-radius: 15px; font-size: 0.8rem; cursor: pointer; }
+        
         .hidden { display: none; }
+        #notifications-area { text-align: left; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -34,23 +34,26 @@
             <div id="timer-display">00:00:00</div>
 
             <div id="reg-section" class="card">
-                <input type="text" id="nickname" style="width:90%; padding:10px; margin-bottom:10px;" placeholder="Tuo Nickname...">
-                <button class="btn-main" onclick="registerUser()">CREA PROFILO 👍</button>
+                <p>Scegli un Nickname (o lascialo vuoto per uno casuale)</p>
+                <input type="text" id="nickname" style="width:90%; padding:12px; border-radius:8px; border:1px solid #ccc; margin-bottom:15px;" placeholder="Tuo Nome...">
+                <button class="btn-main" onclick="registerUser()">INIZIA IL GIOCO</button>
             </div>
 
             <div id="profile-section" class="hidden">
                 <div class="card">
                     <h3 id="user-display-name"></h3>
                     <div id="qr-container"><canvas id="qrcode"></canvas></div>
-                    <div class="reaction-grid" id="reaction-display">
-                        </div>
+                    <div class="reaction-grid" id="reaction-display"></div>
                 </div>
-                <h4>Attività in tempo reale</h4>
-                <div id="interaction-log"></div>
-            </div>
 
+                <div id="notifications-area">
+                    <h4>Interazioni recenti</h4>
+                    <div id="notif-list"></div>
+                </div>
+            </div>
+            
             <div id="admin-section" class="card hidden">
-                <button onclick="socket.emit('adminStart', {value:10, unit:'min'})">Start 10 Min (Test)</button>
+                <button onclick="socket.emit('adminStart', {value:30, unit:'min'})">Start 30 Min</button>
             </div>
         </div>
     </div>
@@ -66,7 +69,6 @@
 
         function registerUser() {
             const nick = document.getElementById('nickname').value;
-            if (!nick) return alert("Metti un nick!");
             socket.emit('registerUser', { nick });
         }
 
@@ -74,7 +76,7 @@
             myProfile = data;
             document.getElementById('reg-section').classList.add('hidden');
             document.getElementById('profile-section').classList.remove('hidden');
-            document.getElementById('user-display-name').innerText = "Profilo: " + data.user.nick;
+            document.getElementById('user-display-name').innerText = data.user.nick;
             renderReactions(data.user.reactions);
             QRCode.toCanvas(document.getElementById('qrcode'), window.location.origin, { width: 180 });
         });
@@ -83,31 +85,46 @@
             const grid = document.getElementById('reaction-display');
             grid.innerHTML = '';
             icons.forEach(icon => {
-                const div = document.createElement('div');
-                div.className = 'item';
-                div.onclick = () => sendReaction(icon);
-                div.innerHTML = `<span>${icon}</span><div class="count">${reactions[icon] || 0}</div>`;
-                grid.appendChild(div);
+                grid.innerHTML += `<div class="item"><span>${icon}</span><div class="count">${reactions[icon]}</div></div>`;
             });
         }
 
-        function sendReaction(icon) {
-            // Per ora mandiamo la reazione a noi stessi per test
-            socket.emit('sendReaction', { toId: socket.id, icon: icon, fromNick: myProfile.user.nick });
+        // Quando ricevo una reazione, creo il tasto per ricambiare
+        socket.on('receiveNotification', (data) => {
+            const list = document.getElementById('notif-list');
+            const id = 'notif-' + Date.now();
+            const div = document.createElement('div');
+            div.className = 'notif-card';
+            div.id = id;
+            div.innerHTML = `
+                <span><b>${data.fromNick}</b> ti ha inviato ${data.icon}</span>
+                <button class="btn-reciproca" onclick="backReaction('${data.fromId}', '${data.fromNick}', '${id}')">Ricambia</button>
+            `;
+            list.prepend(div);
+        });
+
+        function backReaction(toId, toNick, notifId) {
+            // Ricambia con un cuore di default o la stessa icona
+            socket.emit('sendReaction', { 
+                toId: toId, 
+                icon: '❤️', 
+                fromId: socket.id, 
+                fromNick: myProfile.user.nick 
+            });
+            // Rimuovi la notifica dopo aver ricambiato
+            document.getElementById(notifId).style.opacity = '0.5';
+            document.getElementById(notifId).querySelector('button').innerText = 'Fatto!';
+            document.getElementById(notifId).querySelector('button').disabled = true;
         }
 
-        socket.on('reactionUpdate', (data) => {
-            if (data.toId === socket.id) renderReactions(data.reactions);
-            const log = document.getElementById('interaction-log');
-            const entry = document.createElement('div');
-            entry.className = 'log-entry';
-            entry.innerText = data.log;
-            log.prepend(entry);
+        socket.on('updateMyReactions', (reactions) => {
+            renderReactions(reactions);
         });
 
         socket.on('timerStarted', (endTime) => {
             setInterval(() => {
                 const diff = endTime - Date.now();
+                if (diff < 0) { location.reload(); return; }
                 const h = Math.floor(diff / 3600000);
                 const m = Math.floor((diff % 3600000) / 60000);
                 const s = Math.floor((diff % 60000) / 1000);
