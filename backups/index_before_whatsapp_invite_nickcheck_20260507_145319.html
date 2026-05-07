@@ -624,7 +624,6 @@
       <div id="invite-share-buttons" class="share-buttons">
         <button class="share-btn gold" onclick="copyJoinLink()">COPIA LINK</button>
         <button class="share-btn" onclick="nativeShareJoinLink()">CONDIVIDI</button>
-        <button class="share-btn" style="background:#25D366; grid-column:1 / -1;" onclick="inviteViaWhatsApp()">INVITA VIA WHATSAPP</button>
       </div>
 
       <p class="invite-note">
@@ -756,7 +755,6 @@
 
         <button class="btn btn-gold" onclick="startScanner()">SCANNERIZZA QUALCUNO</button>
         <button class="btn" style="background:#1A237E;" onclick="showInviteQr()">MOSTRA QR PER ENTRARE NEL GIOCO</button>
-        <button class="btn" style="background:#25D366;" onclick="inviteViaWhatsApp()">INVITA VIA WHATSAPP</button>
 
         <div id="admin-powers" class="hidden">
           <button class="btn btn-red" onclick="resetAll()">RESET SESSIONE</button>
@@ -1090,13 +1088,6 @@
       buttons.classList.toggle('active', value.length >= 2);
     }
 
-    function inviteViaWhatsApp() {
-      const eventName = document.getElementById('display-title')?.innerText || 'Lumina Live';
-      const text = `Vuoi entrare nel gioco?\n\n${eventName}\nÈ sicuro, anonimo e non devi scaricare nessuna App.\n\nApri qui: ${joinLink}`;
-      const url = 'https://wa.me/?text=' + encodeURIComponent(text);
-      window.open(url, '_blank');
-    }
-
     function copyJoinLink() {
       const nick = (document.getElementById('invite-nick')?.value || '').trim();
 
@@ -1236,24 +1227,6 @@
         maximumAge: 5000
       });
     }
-
-    socket.on('nicknameTaken', d => {
-      const suggestion = d && d.suggestion ? d.suggestion : '';
-      const message = suggestion
-        ? `Questo nick è già in uso. Ti propongo: ${suggestion}`
-        : 'Questo nick è già in uso. Scegline uno diverso.';
-
-      alert(message);
-
-      const input = isAdminMode
-        ? document.getElementById('adm-nick')
-        : document.getElementById('nickname');
-
-      if (input && suggestion) {
-        input.value = suggestion;
-        input.focus();
-      }
-    });
 
     socket.on('profileCreated', d => {
       myId = d.id;

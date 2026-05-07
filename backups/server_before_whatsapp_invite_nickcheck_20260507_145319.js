@@ -77,33 +77,6 @@ function evaluateUserArea(socket, user) {
   }
 }
 
-function normalizeNick(nick) {
-  return String(nick || '')
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, ' ');
-}
-
-function isNickTaken(nick, currentSocketId = null) {
-  const normalized = normalizeNick(nick);
-
-  return Object.values(gameState.users).some(user => {
-    if (!user || user.id === currentSocketId) return false;
-    return normalizeNick(user.nick) === normalized;
-  });
-}
-
-function makeNickSuggestion(baseNick) {
-  const cleanBase = String(baseNick || 'Player').trim().replace(/\s+/g, ' ') || 'Player';
-
-  for (let i = 2; i <= 99; i++) {
-    const candidate = `${cleanBase}${i}`;
-    if (!isNickTaken(candidate)) return candidate;
-  }
-
-  return `${cleanBase}${Math.floor(100 + Math.random() * 900)}`;
-}
-
 function broadcastMap() {
   io.emit('updateMap', gameState.users);
 }
@@ -162,19 +135,9 @@ io.on('connection', socket => {
   });
 
   socket.on('registerUser', userData => {
-    const requestedNick = String(userData.nick || 'Player').trim() || 'Player';
-
-    if (isNickTaken(requestedNick, socket.id)) {
-      socket.emit('nicknameTaken', {
-        requested: requestedNick,
-        suggestion: makeNickSuggestion(requestedNick)
-      });
-      return;
-    }
-
     gameState.users[socket.id] = {
       id: socket.id,
-      nick: requestedNick,
+      nick: userData.nick || 'Player',
       role: userData.role || 'player',
       lat: Number(userData.lat),
       lng: Number(userData.lng),
