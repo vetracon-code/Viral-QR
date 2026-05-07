@@ -1084,120 +1084,6 @@
       z-index: 1010;
     }
 
-  
-    .admin-regia-minimal {
-      margin: 16px 0;
-      padding: 14px;
-      border-radius: 18px;
-      background:
-        radial-gradient(circle at top left, rgba(212,175,55,.14), transparent 44%),
-        #ffffff;
-      border: 1px solid rgba(26,35,126,.12);
-      box-shadow: 0 5px 18px rgba(0,0,0,.08);
-      text-align: left;
-    }
-
-    .admin-regia-minimal h4 {
-      margin: 0 0 6px 0;
-      color: #1A237E;
-      font-size: .98rem;
-      font-weight: 950;
-    }
-
-    .admin-regia-minimal p {
-      margin: 0 0 12px 0;
-      color: #4b5563;
-      font-size: .82rem;
-      line-height: 1.35;
-      font-weight: 700;
-    }
-
-    .admin-users-minimal-list {
-      display: grid;
-      gap: 8px;
-      max-height: 320px;
-      overflow-y: auto;
-      padding-right: 3px;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .admin-user-minimal-row {
-      display: grid;
-      grid-template-columns: 42px 1fr;
-      gap: 9px;
-      align-items: center;
-      border: 1px solid #edf0f7;
-      background: #ffffff;
-      border-radius: 14px;
-      padding: 9px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.045);
-    }
-
-    .admin-user-minimal-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 999px;
-      overflow: hidden;
-      border: 2px solid #D4AF37;
-      background: white;
-    }
-
-    .admin-user-minimal-avatar svg {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    .admin-user-minimal-name {
-      color: #111827;
-      font-size: .9rem;
-      font-weight: 950;
-      line-height: 1.18;
-      word-break: break-word;
-    }
-
-    .admin-user-minimal-meta {
-      margin-top: 3px;
-      color: #6b7280;
-      font-size: .73rem;
-      line-height: 1.25;
-      font-weight: 800;
-    }
-
-    .admin-user-minimal-empty {
-      text-align: center;
-      color: #6b7280;
-      font-size: .84rem;
-      font-weight: 750;
-      padding: 14px 8px;
-      line-height: 1.35;
-      background: #f8fafc;
-      border-radius: 14px;
-    }
-
-    .admin-role-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-left: 5px;
-      padding: 2px 6px;
-      border-radius: 999px;
-      background: #1A237E;
-      color: #fff;
-      font-size: .64rem;
-      font-weight: 950;
-      letter-spacing: .04em;
-      vertical-align: middle;
-    }
-
-    .admin-users-refresh-line {
-      margin-top: 8px;
-      color: #6b7280;
-      font-size: .70rem;
-      font-weight: 750;
-      text-align: right;
-    }
-
   </style>
 </head>
 
@@ -1286,18 +1172,6 @@
         <img src="/images/lumina/lumina-live-banner.png" alt="Lumina Live">
       </div>
       <h3>Setup Host</h3>
-
-      <div class="admin-regia-minimal" id="admin-regia-minimal">
-        <h4>Regia Admin — Utenti collegati</h4>
-        <p>Qui vedi chi è entrato nella sessione. Restando Admin non appari automaticamente agli utenti: per comparire devi entrare anche nel gioco.</p>
-
-        <div class="admin-users-minimal-list" id="admin-users-minimal-list">
-          <div class="admin-user-minimal-empty">Nessun utente collegato per ora.</div>
-        </div>
-
-        <div class="admin-users-refresh-line" id="admin-users-refresh-line">In attesa di aggiornamenti live…</div>
-      </div>
-
 
       <div class="admin-field">
         <label>Nome evento</label>
@@ -1893,7 +1767,6 @@
     }
 
     socket.on('sync', state => {
-      if (state && state.users) renderAdminMinimalUsers(state.users);
       if (state && state.name) {
         document.getElementById('display-title').innerText = state.name || 'Lumina Live';
       }
@@ -2696,13 +2569,6 @@
     });
 
 
-
-    function avatarTypeLetter(type) {
-      if (type === 'man') return 'U';
-      if (type === 'woman') return 'D';
-      return 'A';
-    }
-
     socket.on('profileCreated', d => {
       myId = d.id;
 
@@ -2795,51 +2661,7 @@
       });
     }
 
-
-    function renderAdminMinimalUsers(users) {
-      if (!isAdminMode) return;
-
-      const list = document.getElementById('admin-users-minimal-list');
-      const refresh = document.getElementById('admin-users-refresh-line');
-
-      if (!list) return;
-
-      const all = Object.values(users || {});
-      const visible = all.filter(u => u && u.id !== myId);
-
-      if (!visible.length) {
-        list.innerHTML = '<div class="admin-user-minimal-empty">Nessun altro utente collegato per ora.</div>';
-      } else {
-        list.innerHTML = visible.map(u => {
-          const typeLetter = avatarTypeLetter((u.avatar && u.avatar.type) || 'other');
-          const role = u.role === 'admin' ? 'HOST' : (u.role === 'tester' ? 'TESTER' : 'UTENTE');
-          const area = u.outsideArea ? 'Fuori area' : 'Online';
-          const wardrobe = u.wardrobeCompleted ? 'Armadio completato' : 'Armadio non completato';
-
-          return `
-            <div class="admin-user-minimal-row">
-              <div class="admin-user-minimal-avatar">${renderAvatarSvg(u.avatar || { anon: true })}</div>
-              <div>
-                <div class="admin-user-minimal-name">
-                  ${u.nick || 'Utente'} - ${typeLetter}
-                  <span class="admin-role-badge">${role}</span>
-                </div>
-                <div class="admin-user-minimal-meta">${area} · ${wardrobe}</div>
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
-
-      if (refresh) {
-        const t = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        refresh.innerText = 'Ultimo aggiornamento: ' + t;
-      }
-    }
-
-
     socket.on('updateMap', users => {
-      renderAdminMinimalUsers(users);
       const activeIds = new Set(Object.keys(users || {}));
 
       Object.values(markers).forEach(marker => {
