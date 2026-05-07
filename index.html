@@ -29,7 +29,31 @@
         .notif-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .btn-reply { background: var(--accent); color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 0.7rem; cursor: pointer; }
 
-        #map { height: 250px; width: 100%; margin-top: 20px; }
+        .map-box { position: relative; margin-top: 20px; }
+        #map { height: 250px; width: 100%; margin-top: 0; }
+        .map-recenter-btn {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            z-index: 700;
+            width: auto;
+            padding: 9px 12px;
+            border: none;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.96);
+            color: #1A237E;
+            font-size: 0.78rem;
+            font-weight: 800;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.22);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .map-recenter-btn span:first-child {
+            font-size: 1rem;
+            line-height: 1;
+        }
         .content { padding: 15px; }
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .btn { border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 10px; color: white; }
@@ -156,7 +180,13 @@
                 </div>
             </div>
 
-            <div id="map"></div>
+            <div class="map-box">
+                <button class="map-recenter-btn" onclick="recenterMapOnMe()">
+                    <span>⌖</span>
+                    <span>Ricentra su di me</span>
+                </button>
+                <div id="map"></div>
+            </div>
         </div>
     </div>
 
@@ -406,6 +436,29 @@
                 }
             });
         });
+
+        function recenterMapOnMe() {
+            if (!navigator.geolocation) {
+                alert("Geolocalizzazione non disponibile su questo dispositivo.");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(p => {
+                const lat = p.coords.latitude;
+                const lng = p.coords.longitude;
+                map.setView([lat, lng], 17);
+
+                if (markers[myId]) {
+                    markers[myId].setLatLng([lat, lng]);
+                }
+            }, () => {
+                alert("Non riesco a leggere la tua posizione. Controlla i permessi GPS del browser.");
+            }, {
+                enableHighAccuracy: true,
+                timeout: 8000,
+                maximumAge: 10000
+            });
+        }
 
         function resetAll() { if(confirm("RESET?")) socket.emit('adminRequestReset'); }
         socket.on('gameDeleted', () => location.href = window.location.origin + (window.location.search.includes('admin') ? "?admin=1" : ""));
