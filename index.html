@@ -6,72 +6,89 @@
     <title>Lumina Live</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --accent: #D4AF37; --primary: #1A237E; --danger: #C62828; }
-        body { font-family: -apple-system, sans-serif; margin:0; background: #f0f2f5; }
-        .header { background: var(--primary); color: white; padding: 15px; text-align: center; position: relative; z-index: 1000; }
-        #map { height: 400px; width: 100%; background: #eee; border-bottom: 3px solid var(--accent); }
+        :root { --accent: #D4AF37; --primary: #1A237E; --danger: #C62828; --success: #28a745; }
+        body { font-family: -apple-system, sans-serif; margin:0; background: #f0f2f5; overflow-x: hidden; }
+        .header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top:0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        #map { height: 300px; width: 100%; background: #eee; }
         .content { padding: 15px; max-width: 500px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .btn { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; margin-bottom: 10px; font-size: 1rem; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
+        .btn { border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 10px; font-size: 1rem; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-gold { background: var(--accent); }
+        .btn-wa { background: #25D366; }
+        .btn-scan { background: #333; }
         .hidden { display: none; }
         input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
         .stats { position: absolute; top: 5px; right: 10px; font-size: 0.8rem; opacity: 0.8; }
-        #qr-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:none; flex-direction:column; align-items:center; justify-content:center; }
+        #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
+        #reader { width: 100% !important; max-width: 400px; }
+        .like-popup { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; padding: 15px 25px; border-radius: 50px; font-weight: bold; z-index: 10000; animation: slideUp 0.5s ease-out; }
+        @keyframes slideUp { from { bottom: -100px; } to { bottom: 20px; } }
     </style>
 </head>
 <body>
-    <div id="qr-overlay" onclick="this.style.display='none'">
-        <canvas id="qr-canvas"></canvas>
-        <p>Tocca per chiudere</p>
+    <div id="overlay">
+        <div id="qr-container" class="hidden">
+            <canvas id="qr-canvas"></canvas>
+            <p>Il tuo codice Lumina</p>
+        </div>
+        <div id="scanner-container" class="hidden">
+            <div id="reader"></div>
+            <p>Inquadra il QR di un altro giocatore</p>
+        </div>
+        <button class="btn" style="background:#666; margin-top:20px;" onclick="closeOverlay()">CHIUDI</button>
     </div>
 
     <div class="header">
         <div id="user-count" class="stats">Online: 0</div>
         <h2 id="display-title" style="margin:0; font-size: 1.2rem;">LUMINA</h2>
-        <div id="timer-display" style="color:var(--accent); font-size: 0.9rem;">Pronto per iniziare</div>
+        <div id="timer-display" style="color:var(--accent); font-size: 0.8rem;">Pronto</div>
     </div>
 
     <div id="map"></div>
 
     <div class="content">
         <div id="admin-setup" class="card hidden">
-            <h3 style="margin-top:0">Pannello Host</h3>
-            <label style="font-size: 0.8rem; font-weight: bold;">NOME EVENTO</label>
-            <input type="text" id="adm-event-name" placeholder="Es: Festa in Giardino">
-            <label style="font-size: 0.8rem; font-weight: bold;">IL TUO NICKNAME DA GIOCATORE</label>
-            <input type="text" id="adm-nick" placeholder="Inserisci il tuo nome nel gioco">
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-            <button class="btn" style="background:#28a745" onclick="setupGPS()">USA MIA POSIZIONE E INIZIA</button>
-            <input type="text" id="adm-address" placeholder="Oppure inserisci un indirizzo">
-            <button class="btn" style="background:var(--primary)" onclick="setupAddr()">USA INDIRIZZO E INIZIA</button>
+            <h3>Configurazione Host</h3>
+            <input type="text" id="adm-event-name" placeholder="Nome Evento">
+            <input type="text" id="adm-nick" placeholder="Tuo Nickname Giocatore">
+            <button class="btn btn-gold" onclick="setupGPS()">INIZIA CON GPS</button>
+            <input type="text" id="adm-address" placeholder="O inserisci indirizzo">
+            <button class="btn" style="background:var(--primary)" onclick="setupAddr()">INIZIA CON INDIRIZZO</button>
         </div>
 
         <div id="player-reg" class="card">
-            <h3>Benvenuto</h3>
+            <h3>Partecipa</h3>
             <input type="text" id="nickname" placeholder="Tuo Nickname">
-            <button class="btn" onclick="joinAsPlayer()">ENTRA NEL GIOCO</button>
+            <button class="btn btn-gold" onclick="joinAsPlayer()">ENTRA NEL GIOCO</button>
         </div>
 
         <div id="main-dashboard" class="hidden">
             <div class="card">
                 <h3 id="user-hello" style="margin-top:0; color:var(--primary);"></h3>
-                <button class="btn" onclick="showQR()">MOSTRA IL MIO QR</button>
-                <div id="admin-powers" class="hidden" style="margin-top:20px; border-top:2px solid #eee; padding-top:15px;">
-                    <button class="btn" style="background:#444" onclick="toggleSetup()">MODIFICA EVENTO / AREA</button>
-                    <button class="btn" style="background:var(--danger)" onclick="resetAll()">RESET TOTALE SESSIONE</button>
+                
+                <button class="btn btn-gold" onclick="showMyQR()">MOSTRA IL MIO QR</button>
+                <button class="btn btn-scan" onclick="startScanner()">SCANNERIZZA GIOCATORE</button>
+                <button class="btn btn-wa" onclick="inviteWA()">INVITA SU WHATSAPP</button>
+
+                <div id="admin-powers" class="hidden" style="margin-top:20px; padding-top:15px; border-top: 1px dashed #ccc;">
+                    <button class="btn" style="background:#444" onclick="toggleSetup()">MODIFICA EVENTO</button>
+                    <button class="btn" style="background:var(--danger)" onclick="resetAll()">RESET SESSIONE</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script>
         const socket = io();
-        let map, isAdmin = false, myId = "", markers = {};
+        let map, isAdmin = false, myId = "", markers = {}, html5QrCode;
 
-        map = L.map('map', { zoomControl: false }).setView([45.4642, 9.1900], 13);
+        // Inizializza Mappa
+        map = L.map('map', { zoomControl: false }).setView([45.4642, 9.19], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         if (window.location.search.includes('admin')) {
@@ -80,37 +97,65 @@
             document.getElementById('player-reg').classList.add('hidden');
         }
 
-        function setupGPS() {
-            navigator.geolocation.getCurrentPosition(p => completeSetup(p.coords.latitude, p.coords.longitude), () => alert("Errore GPS"));
-        }
-
+        // --- GESTIONE LOGIN ---
+        function setupGPS() { navigator.geolocation.getCurrentPosition(p => completeSetup(p.coords.latitude, p.coords.longitude)); }
         async function setupAddr() {
-            const addr = document.getElementById('adm-address').value;
-            if(!addr) return alert("Inserisci un indirizzo");
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}`);
-            const data = await res.json();
-            if(data.length > 0) completeSetup(parseFloat(data[0].lat), parseFloat(data[0].lon));
-            else alert("Indirizzo non trovato");
+            const a = document.getElementById('adm-address').value;
+            const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(a)}`);
+            const d = await r.json();
+            if(d.length > 0) completeSetup(parseFloat(d[0].lat), parseFloat(d[0].lon));
         }
-
         function completeSetup(lat, lng) {
-            const eventName = document.getElementById('adm-event-name').value || "Lumina";
-            const hostNick = document.getElementById('adm-nick').value || "Host";
-            socket.emit('adminStart', { name: eventName, value: 60, unit: "min", lat, lng });
-            socket.emit('registerUser', { nick: hostNick, lat, lng });
+            const e = document.getElementById('adm-event-name').value || "Lumina";
+            const n = document.getElementById('adm-nick').value || "Host";
+            socket.emit('adminStart', { name: e, value: 60, unit: "min", lat, lng });
+            socket.emit('registerUser', { nick: n, lat, lng });
             document.getElementById('admin-setup').classList.add('hidden');
             map.setView([lat, lng], 16);
         }
-
         function joinAsPlayer() {
             navigator.geolocation.getCurrentPosition(p => {
-                const nick = document.getElementById('nickname').value || "Giocatore";
-                socket.emit('registerUser', { nick, lat: p.coords.latitude, lng: p.coords.longitude });
+                const n = document.getElementById('nickname').value || "Player";
+                socket.emit('registerUser', { nick: n, lat: p.coords.latitude, lng: p.coords.longitude });
                 document.getElementById('player-reg').classList.add('hidden');
                 map.setView([p.coords.latitude, p.coords.longitude], 16);
-            }, () => alert("Attiva il GPS"));
+            });
         }
 
+        // --- FUNZIONI SOCIAL ---
+        function showMyQR() {
+            document.getElementById('overlay').style.display = 'flex';
+            document.getElementById('qr-container').classList.remove('hidden');
+            document.getElementById('scanner-container').classList.add('hidden');
+            QRCode.toCanvas(document.getElementById('qr-canvas'), window.location.origin + "/?target=" + myId, { width: 250 });
+        }
+
+        function startScanner() {
+            document.getElementById('overlay').style.display = 'flex';
+            document.getElementById('scanner-container').classList.remove('hidden');
+            document.getElementById('qr-container').classList.add('hidden');
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+                const targetId = new URL(text).searchParams.get("target");
+                if(targetId) {
+                    socket.emit('sendLike', { to: targetId, from: myId });
+                    alert("Like inviato!");
+                    closeOverlay();
+                }
+            });
+        }
+
+        function inviteWA() {
+            const text = "Vieni a giocare a Lumina con me! Entra qui: " + window.location.origin;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        }
+
+        function closeOverlay() {
+            document.getElementById('overlay').style.display = 'none';
+            if(html5QrCode) html5QrCode.stop();
+        }
+
+        // --- EVENTI ---
         socket.on('profileCreated', d => {
             myId = d.id;
             document.getElementById('main-dashboard').classList.remove('hidden');
@@ -118,7 +163,13 @@
             if(isAdmin) document.getElementById('admin-powers').classList.remove('hidden');
         });
 
-        socket.on('updateStats', count => { document.getElementById('user-count').innerText = "Online: " + count; });
+        socket.on('receiveLike', d => {
+            const p = document.createElement('div');
+            p.className = 'like-popup';
+            p.innerText = `❤️ Qualcuno ha scansionato il tuo QR!`;
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 4000);
+        });
 
         socket.on('updateMap', users => {
             Object.values(users).forEach(u => {
@@ -134,20 +185,9 @@
             document.getElementById('timer-display').innerText = "Gioco in corso";
         });
 
-        function showQR() {
-            QRCode.toCanvas(document.getElementById('qr-canvas'), window.location.origin + "/?target=" + myId, { width: 250 });
-            document.getElementById('qr-overlay').style.display = "flex";
-        }
-
         function toggleSetup() { document.getElementById('admin-setup').classList.toggle('hidden'); }
-
-        function resetAll() {
-            if(confirm("RESET TOTALE SESSIONE?")) socket.emit('adminRequestReset');
-        }
-
-        socket.on('gameDeleted', () => {
-            location.href = window.location.origin + (isAdmin ? "?admin=1" : "");
-        });
+        function resetAll() { if(confirm("RESET TOTALE?")) socket.emit('adminRequestReset'); }
+        socket.on('gameDeleted', () => location.href = window.location.origin + (isAdmin ? "?admin=1" : ""));
     </script>
 </body>
 </html>
