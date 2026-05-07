@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viral QR</title>
+    <title>Viral QR - Live</title>
     <style>
         body { font-family: sans-serif; text-align: center; background: #0f172a; color: white; padding: 20px; }
-        .container { max-width: 400px; margin: auto; background: #1e293b; padding: 30px; border-radius: 20px; }
+        .container { max-width: 400px; margin: auto; background: #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         #timer { font-size: 3.5rem; color: #38bdf8; margin: 20px 0; font-weight: bold; }
-        .btn { width: 100%; padding: 15px; background: #ec4899; border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; }
-        #qrcode { margin-top: 25px; padding: 10px; background: white; display: inline-block; border-radius: 10px; }
-        #qrcode canvas { width: 180px !important; height: 180px !important; }
+        .btn { width: 100%; padding: 15px; background: #ec4899; border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+        #qr-container { margin-top: 30px; padding: 15px; background: white; display: inline-block; border-radius: 15px; min-height: 150px; min-width: 150px; }
+        canvas { display: block; }
     </style>
 </head>
 <body>
@@ -18,18 +18,43 @@
         <h1>Viral QR</h1>
         <div id="timer">00:00</div>
         <button class="btn" onclick="startTimer()">AVVIA IL GIOCO</button>
-        <div id="qrcode"></div>
+        <div style="margin-top: 20px;">
+            <p style="color: #94a3b8; font-size: 0.8rem;">Scansiona per connetterti:</p>
+            <div id="qr-container">
+                <canvas id="qrcode"></canvas>
+            </div>
+        </div>
     </div>
+
     <script src="/socket.io/socket.io.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
     <script>
         const socket = io();
-        QRCode.toCanvas(document.getElementById('qrcode'), window.location.href);
-        function startTimer() { socket.emit('createMaster', 60); }
+        const canvas = document.getElementById('qrcode');
+
+        // Funzione per generare il QR
+        function generateQR() {
+            const currentUrl = window.location.href;
+            QRCode.toCanvas(canvas, currentUrl, { width: 180, margin: 2 }, function (error) {
+                if (error) console.error('Errore QR:', error);
+                else console.log('QR Code generato per:', currentUrl);
+            });
+        }
+
+        // Prova a generarlo subito
+        generateQR();
+
+        function startTimer() {
+            socket.emit('createMaster', 60);
+        }
+
         socket.on('timerStarted', (endTime) => {
             setInterval(() => {
                 const diff = endTime - Date.now();
-                if (diff <= 0) { document.getElementById('timer').innerText = "FINE"; return; }
+                if (diff <= 0) {
+                    document.getElementById('timer').innerText = "FINE";
+                    return;
+                }
                 const min = Math.floor(diff / 60000);
                 const sec = Math.floor((diff % 60000) / 1000);
                 document.getElementById('timer').innerText = min + ":" + (sec < 10 ? '0' : '') + sec;
