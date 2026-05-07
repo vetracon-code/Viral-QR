@@ -63,20 +63,28 @@
         <div id="admin-setup" class="card hidden">
             <h3>Pannello Host</h3>
             <input type="text" id="adm-event-name" placeholder="Nome Evento">
-            <input type="text" id="adm-nick" placeholder="Tuo Nickname">
-            <button class="btn btn-gold" onclick="setupGPS()">INIZIA CON GPS</button>
+            <button class="btn btn-gold" id="btn-activate" onclick="activateArea()">1. ATTIVA AREA GIOCO</button>
+            
+            <div id="admin-join-section" class="hidden" style="margin-top:20px; border-top:1px solid #eee; padding-top:15px;">
+                <p style="font-size:0.9rem">Area Attiva! Ora entra come giocatore:</p>
+                <input type="text" id="adm-nick" placeholder="Tuo Nickname Giocatore">
+                <button class="btn" style="background:var(--success)" onclick="joinAsAdminPlayer()">2. ENTRA NEL GIOCO</button>
+            </div>
         </div>
+
         <div id="player-reg" class="card">
-            <h3>Partecipa</h3>
+            <h3>Benvenuto</h3>
             <input type="text" id="nickname" placeholder="Tuo Nickname">
             <button class="btn btn-gold" onclick="joinAsPlayer()">ENTRA NEL GIOCO</button>
         </div>
+
         <div id="main-dashboard" class="hidden">
             <div class="card">
                 <h3 id="user-hello" style="margin:0"></h3>
                 <button class="btn btn-gold" onclick="showMyQR()">IL MIO QR</button>
                 <button class="btn btn-scan" onclick="startScanner()">SCANNERIZZA</button>
                 <button class="btn btn-wa" onclick="inviteWA()">INVITA AMICI</button>
+                
                 <div id="admin-powers" class="hidden" style="margin-top:20px; border-top:1px solid #eee; padding-top:10px;">
                     <button class="btn" style="background:#444" onclick="toggleSetup()">MODIFICA AREA</button>
                     <button class="btn" style="background:var(--danger)" onclick="resetAll()">RESET SESSIONE</button>
@@ -102,16 +110,27 @@
             document.getElementById('player-reg').classList.add('hidden');
         }
 
-        function setupGPS() { navigator.geolocation.getCurrentPosition(p => completeSetup(p.coords.latitude, p.coords.longitude)); }
-        function completeSetup(lat, lng) {
-            const e = document.getElementById('adm-event-name').value || "Lumina";
-            const n = document.getElementById('adm-nick').value || "Host";
-            socket.emit('adminStart', { name: e, value: 60, unit: "min", lat, lng });
-            socket.emit('registerUser', { nick: n, lat, lng });
-            document.getElementById('admin-setup').classList.add('hidden');
-            map.setView([lat, lng], 16);
+        // LOGICA ADMIN
+        function activateArea() {
+            navigator.geolocation.getCurrentPosition(p => {
+                const e = document.getElementById('adm-event-name').value || "Lumina";
+                socket.emit('adminStart', { name: e, value: 60, unit: "min", lat: p.coords.latitude, lng: p.coords.longitude });
+                document.getElementById('admin-join-section').classList.remove('hidden');
+                document.getElementById('btn-activate').style.opacity = "0.5";
+                document.getElementById('btn-activate').innerText = "AREA ATTIVATA";
+                map.setView([p.coords.latitude, p.coords.longitude], 16);
+            });
         }
 
+        function joinAsAdminPlayer() {
+            const n = document.getElementById('adm-nick').value || "Host";
+            navigator.geolocation.getCurrentPosition(p => {
+                socket.emit('registerUser', { nick: n, lat: p.coords.latitude, lng: p.coords.longitude });
+                document.getElementById('admin-setup').classList.add('hidden');
+            });
+        }
+
+        // LOGICA PLAYER STANDARD
         function joinAsPlayer() {
             navigator.geolocation.getCurrentPosition(p => {
                 const n = document.getElementById('nickname').value || "Player";
@@ -121,6 +140,7 @@
             });
         }
 
+        // SOCIAL & SCANNER
         function showMyQR() {
             document.getElementById('overlay').style.display = 'flex';
             document.getElementById('qr-container').classList.remove('hidden');
