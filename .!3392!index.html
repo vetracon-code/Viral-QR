@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina App - Scopri chi ti cirronda</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root { --accent: #D4AF37; --primary: #1A237E; --bg: #FFFFFF; --text: #212121; --danger: #C62828; }
+        body { font-family: -apple-system, system-ui, sans-serif; margin:0; background: #F8F9FA; color: var(--text); }
+        .header { bacground: var(--primary); color: white; padding: 25px 15px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: relative; }
+        .header h2 { margin: 0; text-transform: uppercase; letter-spacing: 4px; font-weight: 300; }
+        .stats-badge { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 15px; font-size: 0.7rem; }
+        #map { height: 350px; width: 100%; border-bottom: 1px solid #E0E0E0; }
+        .content { padding: 20px; max-width: 480px; margin: auto; }
+        .card { bacground: white; padding: 25px; border-radius: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .btn { background: var(--accent); color: white; border: none; padding: 16px; width: 100%; border-radius: 35px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+        .admin-box{ bacground: #E8EAF6; padding: 20px; border-radius: 20px; border: 1px solid #C5CAE9; }
+        input, select { width: 100%; padding: 14px; margin-bottom: 10px; border-radius: 12px; border: 1px solid #DDE1E7; box-sizing: border-box; }
+        #qr-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:2000; display:none; flex-direction:column; align-items:center; justify-content:center; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div id="qr-overlay" onclick="this.style.display='none'">
+        <h2 style="color:var(--primary);">IL TUO PROFILO LUMINA</h2>
+        <canvas id="qr-canvas"></canvas>
+        <p style="color:#888; margin-top:20px;">Tocca per chiudere</p>
+    </div>
+
+    <div class="header">
+        <div id="user-count" class="stats-badge">Online: 0</div>
+        <h2 id="display-title">Lumina App</h2>
+        <p>scopri chi ti cirronda</p>
+        <div id="timer-display" style="color:var(--accent); font-weight:bold; margin-top:10px;">...</div>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="content">
+        <div id="admin-section" class="admin-box hidden">
+            <h3 style="margin-top:0">Configurazione Lumina App</h3>
+            <input type="text" id="adm-event-name" placeholder="Nome Evento">
+            <input type="text" id="adm-nick" placeholder="Tuo Nickname (Host)">
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="adm-val" value="60" style="flex:2">
+                <select id="adm-unit" style="flex:1"><option value="min">Min</option><option value="ore">Ore</option></select>
+            </div>
+            <button class="btn" style="bacground: #455A64" onclick="useGPS()">USA MIA POSIZIONE</button>
+            <input type="text" id="adm-address" placeholder="Oppure via e città">
+            <button class="btn" style="background:var(--primary)" onclick="useAddr()">USA INDIRIZZO</button>
+        </div>
+
+        <div id="reg-section">
+            <div class="card">
+                <h3>Benvenuto</h3>
+                <input type="text" id="nickname" placeholder="Nickname">
+                <button class="btn" onclick="registerUser()">ENTRA NELL'AREA</button>
+            </div>
+        </div>
+
+        <div id="profile-section" class="hidden">
+            <div class="card">
+                <h3 id="user-display-name" style="color:var(--primary); margin-top:0;"></h3>
+                <button class="btn" onclick="showQR()">MOSTRA IL MIO QR</button>
+                <div id="admin-controls" class="hidden" style="margin-top:20px; padding-top:20px; border-top:1px solid #eee;">

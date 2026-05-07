@@ -3,131 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumina - Scopri chi ti cirronda</title>
+    <title>Lumina App</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --accent: #D4AF37; --primary: #1A237E; --bg: #FFFFFF; --text: #212121; --danger: #C62828; }
-        body { font-family: -apple-system, system-ui, sans-serif; margin:0; background: #F8F9FA; color: var(--text); }
-        .header { bacground: var(--primary); color: white; padding: 25px 15px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: relative; }
-        .header h2 { margin: 0; text-transform: uppercase; letter-spacing: 4px; font-weight: 300; }
-        .stats-badge { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 15px; font-size: 0.7rem; }
-        #map { height: 350px; width: 100%; border-bottom: 1px solid #E0E0E0; }
-        .content { padding: 20px; max-width: 480px; margin: auto; }
-        .card { bacground: white; padding: 25px; border-radius: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .btn { background: var(--accent); color: white; border: none; padding: 16px; width: 100%; border-radius: 35px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
-        .admin-box{ bacground: #E8EAF6; padding: 20px; border-radius: 20px; border: 1px solid #C5CAE9; }
-        input, select { width: 100%; padding: 14px; margin-bottom: 10px; border-radius: 12px; border: 1px solid #DDE1E7; box-sizing: border-box; }
-        #qr-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:2000; display:none; flex-direction:column; align-items:center; justify-content:center; }
+        :root { --accent: #D4AF37; --primary: #1A237E; --danger: #C62828; }
+        body { font-family: sans-serif; margin:0; background: #F8F9FA; color: #222; }
+        .header { background: var(--primary); color: white; padding: 20px; text-align: center; position: relative; }
+        .stats { position: absolute; top: 10px; right: 10px; font-size: 0.7rem; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 10px; }
+        #map { height: 350px; width: 100%; border-bottom: 2px solid var(--primary); }
+        .content { padding: 20px; max-width: 500px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .btn { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 30px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
         .hidden { display: none; }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; }
+        #qr-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:2000; display:none; flex-direction:column; align-items:center; justify-content:center; }
     </style>
 </head>
 <body>
     <div id="qr-overlay" onclick="this.style.display='none'">
-        <h2 style="color:var(--primary);">IL TUO PROFILO LUMINA</h2>
         <canvas id="qr-canvas"></canvas>
-        <p style="color:#888; margin-top:20px;">Tocca per chiudere</p>
+        <p>Tocca per chiudere</p>
     </div>
-
     <div class="header">
-        <div id="user-count" class="stats-badge">Online: 0</div>
-        <h2 id="display-title">Lumina</h2>
-        <p>scopri chi ti cirronda</p>
-        <div id="timer-display" style="color:var(--accent); font-weight:bold; margin-top:10px;">...</div>
+        <div id="user-count" class="stats">Online: 0</div>
+        <h2 id="display-title" style="margin:0">LUMINA</h2>
+        <div id="timer-display" style="color:var(--accent); margin-top:5px; font-weight:bold;">...</div>
     </div>
-
     <div id="map"></div>
-
     <div class="content">
-        <div id="admin-section" class="admin-box hidden">
-            <h3 style="margin-top:0">Configurazione Lumina</h3>
+        <div id="admin-section" class="card hidden">
+            <h3>Configurazione Host</h3>
             <input type="text" id="adm-event-name" placeholder="Nome Evento">
             <input type="text" id="adm-nick" placeholder="Tuo Nickname (Host)">
-            <div style="display:flex; gap:10px;">
-                <input type="number" id="adm-val" value="60" style="flex:2">
-                <select id="adm-unit" style="flex:1"><option value="min">Min</option><option value="ore">Ore</option></select>
-            </div>
-            <button class="btn" style="bacground: #455A64" onclick="useGPS()">USA MIA POSIZIONE</button>
-            <input type="text" id="adm-address" placeholder="Oppure via e citt√†">
-            <button class="btn" style="background:var(--primary)" onclick="useAddr()">USA INDIRIZZO</button>
+            <button class="btn" style="background:#455A64" onclick="useGPS()">1. USA MIA POSIZIONE GPS</button>
+            <input type="text" id="adm-address" placeholder="Oppure scrivi indirizzo">
+            <button class="btn" style="background:var(--primary)" onclick="useAddr()">2. USA QUESTO INDIRIZZO</button>
         </div>
-
-        <div id="reg-section">
-            <div class="card">
-                <h3>Benvenuto</h3>
-                <input type="text" id="nickname" placeholder="Nickname">
-                <button class="btn" onclick="registerUser()">ENTRA NELL'AREA</button>
-            </div>
+        <div id="reg-section" class="card">
+            <h3>Benvenuto</h3>
+            <input type="text" id="nickname" placeholder="Inserisci il tuo Nickname">
+            <button class="btn" onclick="registerUser()">ENTRA NEL GIOCO</button>
         </div>
-
         <div id="profile-section" class="hidden">
             <div class="card">
                 <h3 id="user-display-name" style="color:var(--primary); margin-top:0;"></h3>
                 <button class="btn" onclick="showQR()">MOSTRA IL MIO QR</button>
-                <div id="admin-controls" class="hidden" style="margin-top:20px; padding-top:20px; border-top:1px solid #eee;">
-                    <button class="btn" style="background:#1e293b" onclick="backToSettings()">ª∏è MODIFICA AREA</button>
-                    <button class="btn" style="background:var(--danger)" onclick="doReset()">ª∏è CHIUDI TUTTO</button>
+                <div id="admin-controls" class="hidden" style="margin-top:20px; border-top:1px solid #eee; padding-top:10px;">
+                    <button class="btn" style="background:#444" onclick="backToSettings()">MODIFICA AREA</button>
+                    <button class="btn" style="background:var(--danger)" onclick="doReset()">CHIUDI TUTTO</button>
                 </div>
             </div>
         </div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const socket = io(); let map, isAdmin = false, myId = '', otherMarkers = {};
+        const socket = io();
+        let map, isAdmin = false, myId = "", otherMarkers = {};
         map = L.map('map', {zoomControl:false}).setView([45.46, 9.19], 13);
         L.tileLayer('https://{s}.tile.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
-        if (new URLSearchParams(window.location.search).has('admin')) {
-            isAdmin = true; document.getElementById('admin-section').classList.remove('hidden');
+
+        if (window.location.search.includes('admin')) {
+            isAdmin = true;
+            document.getElementById('admin-section').classList.remove('hidden');
             document.getElementById('reg-section').classList.add('hidden');
         }
-        function useGPS() { navigator.geolocation.getCurrentPosition(p => start(p.coords.latitude, p.coords.longitude)); }
+
+        function useGPS() { 
+            navigator.geolocation.getCurrentPosition(p => {
+                const lat = p.coords.latitude;
+                const lng = p.coords.longitude;
+                map.setView([lat, lng], 17);
+                start(lat, lng);
+            }, (err) => alert("Errore GPS: " + err.message)); 
+        }
+
         async function useAddr() {
             const a = document.getElementById('adm-address').value;
-            const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURLComponent(a));
-            const d = await r.json(); if(d.length > 0) start(parseFloat(d[0].lat), parseFloat(d[0].lon));
+            if(!a) return alert("Inserisci un indirizzo");
+            const r = await fetch("https://nominatim.openstreetmap.org/search?format=json&q="+encodeURIComponent(a));
+            const d = await r.json();
+            if(d.length > 0) {
+                const lat = parseFloat(d[0].lat);
+                const lng = parseFloat(d[0].lon);
+                map.setView([lat, lng], 17);
+                start(lat, lng);
+            } else alert("Indirizzo non trovato");
         }
+
         function start(lat, lng) {
-            socket.emit('adminStart', { name: document.getElementById('adm-event-name').value || "Lumina", value: document.getElementById('adm-val').value, unit: document.getElementById('adm-unit').value, lat, lng });
-            socket.emit('registerUser', { nick: document.getElementById('adm-nick').value || "Host", lat, lng });
+            const name = document.getElementById('adm-event-name').value || "Lumina";
+            const nick = document.getElementById('adm-nick').value || "Host";
+            socket.emit('adminStart', { name, value: 60, unit: "min", lat, lng });
+            socket.emit('registerUser', { nick, lat, lng });
             document.getElementById('admin-section').classList.add('hidden');
         }
+
         function registerUser() {
             navigator.geolocation.getCurrentPosition(p => {
-                socket.emit('registerUser', { nick: document.getElementById('nickname').value || "Guest", lat: p.coords.latitude, lng: p.coords.longitude });
+                const nick = document.getElementById('nickname').value || "Guest";
+                socket.emit('registerUser', { nick, lat: p.coords.latitude, lng: p.coords.longitude });
                 document.getElementById('reg-section').classList.add('hidden');
-            });
+                map.setView([p.coords.latitude, p.coords.longitude], 17);
+            }, () => alert("Attiva il GPS"));
         }
+
         socket.on('profileCreated', d => {
-            myId = d.id; document.getElementById('profile-section').classList.remove('hidden');
-            document.getElementById('user-display-name').innerText = d.user.nick + (isAdmin ? " (Host)" : "");
+            myId = d.id;
+            document.getElementById('profile-section').classList.remove('hidden');
+            document.getElementById('user-display-name').innerText = d.user.nick + (isAdmin ? " (Admin)" : "");
             if(isAdmin) document.getElementById('admin-controls').classList.remove('hidden');
         });
-        socket.on('updateStats', c => { document.getElementById('user-count').innerText = "Online: " + c; });
-        function showQR() {
-            QRCode.toCanvas(document.getElementById('qr-canvas'), window.location.origin + "/?target=" + myId, { width: 280 }, (err) => { if(!err) document.getElementById('qr-overlay').style.display = 'flex'; });
-        }
-        function backToSettings() { document.getElementById('admin-section').classList.remove('hidden'); document.getElementById('profile-section').classList.add('hidden'); }
-        function doReset() { if(confirm("Chiudi Lumina per tutti?")) socket.emit('adminRequestReset'); }
-        socket.on('timerStarted', d => {
-            document.getElementById('display-title').innerText = d.name;
-            setInterval(() => {
-                const diff = d.endTime - Date.now();
-                if(diff <= 0) { document.getElementById('timer-display').innerText = "CONCLUSO"; return; }
-                const m = Math.floor((diff%3600000)/60000), s = Math.floor(diff%60000/1000);
-                document.getElementById('timer-display').innerText = m + ":" + (s<10?'0':'') + s;
-            }, 1000);
+
+        socket.on('updateStats', count => { 
+            document.getElementById('user-count').innerText = "Online: " + count; 
         });
+
+        function showQR() {
+            QRCode.toCanvas(document.getElementById('qr-canvas'), window.location.origin + "/?target=" + myId, { width: 280 }, (err) => {
+                if(!err) document.getElementById('qr-overlay').style.display = "flex";
+            });
+        }
+
+        function backToSettings() {
+            document.getElementById('admin-section').classList.remove('hidden');
+            document.getElementById('profile-section').classList.add('hidden');
+        }
+
+        function doReset() { if(confirm("Chiudere tutto?")) socket.emit('adminRequestReset'); }
+        
+        socket.on('gameDeleted', () => { 
+            location.href = window.location.origin + (isAdmin ? "?admin=1" : ""); 
+        });
+
         socket.on('updateMap', users => {
             Object.values(users).forEach(u => {
                 if(u.id !== socket.id) {
                     if(otherMarkers[u.id]) otherMarkers[u.id].setLatLng([u.lat, u.lng]);
-                    else otherMarkers[u.id] = L.marker([u.lat, u.lng]).addTo(map).bindPopu(u.nick);
+                    else otherMarkers[u.id] = L.marker([u.lat, u.lng]).addTo(map).bindPopup(u.nick);
                 }
             });
         });
-        socket.on('gameDeleted', () => location.href = window.location.origin + (isAdmin ? "?admin=1" : ""));
+
+        socket.on('timerStarted', d => { document.getElementById('display-title').innerText = d.name; });
     </script>
 </body>
 </html>
