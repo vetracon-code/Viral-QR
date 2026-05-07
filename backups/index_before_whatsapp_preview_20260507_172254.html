@@ -6,18 +6,6 @@
 
   <title>Lumina Live</title>
 
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Lumina Live — Solo qui. Solo ora.">
-  <meta property="og:description" content="Un gioco sociale anonimo e a tempo: scegli un nick, scopri chi è vicino e scambia reazioni prima che il countdown finisca.">
-  <meta property="og:image" content="https://viral-qr.onrender.com/images/lumina/lumina-live-banner.png">
-  <meta property="og:url" content="https://viral-qr.onrender.com/">
-  <meta property="og:site_name" content="Lumina Live">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Lumina Live — Solo qui. Solo ora.">
-  <meta name="twitter:description" content="Gioco sociale anonimo e a tempo: entra con un nick, scopri chi è presente e partecipa prima che il countdown finisca.">
-  <meta name="twitter:image" content="https://viral-qr.onrender.com/images/lumina/lumina-live-banner.png">
-
-
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <style>
@@ -1960,19 +1948,7 @@
 
     function inviteViaWhatsApp() {
       const eventName = document.getElementById('display-title')?.innerText || 'Lumina Live';
-
-      const text =
-        `Ti invito in ${eventName} ✨
-
-` +
-        `Un gioco sociale anonimo e a tempo: scegli un nick, entra nell'area e scopri chi è presente prima che il countdown finisca.
-
-` +
-        `Solo qui. Solo ora.
-
-` +
-        `${joinLink}`;
-
+      const text = `Vuoi entrare nel gioco?\n\n${eventName}\nÈ sicuro, anonimo e non devi scaricare nessuna App.\n\nApri qui: ${joinLink}`;
       const url = 'https://wa.me/?text=' + encodeURIComponent(text);
       window.open(url, '_blank');
     }
