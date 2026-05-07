@@ -842,27 +842,6 @@
         </div>
 
         <div class="avatar-controls">
-          
-          <select id="avatar-type-admin" onchange="handleAvatarTypeChange('admin')">
-            <option value="man">Uomo</option>
-            <option value="woman">Donna</option>
-            <option value="other">Altro</option>
-          </select>
-
-          <select id="avatar-creature-admin" class="hidden" onchange="updateAvatarPreview('admin')">
-            <option value="alien">Alieno</option>
-            <option value="bear">Orso</option>
-            <option value="dog-small">Cane piccola taglia</option>
-            <option value="dog-medium">Cane media taglia</option>
-            <option value="dog-large">Cane grande taglia</option>
-            <option value="cat-siamese">Gatto siamese</option>
-            <option value="cat-persian">Gatto persiano</option>
-            <option value="cat-black">Gatto nero</option>
-            <option value="cat-red">Gatto rosso</option>
-            <option value="horse">Cavallo</option>
-            <option value="mare">Cavalla</option>
-          </select>
-
           <select id="avatar-face-admin" onchange="updateAvatarPreview('admin')">
             <option value="oval">Viso ovale</option>
             <option value="round">Viso tondo</option>
@@ -894,7 +873,6 @@
             <option value="blonde">Biondo</option>
             <option value="red">Ramato</option>
             <option value="gray">Grigio</option>
-            <option value="saltpepper">Brizzolato</option>
             <option value="color">Colorato</option>
           </select>
 
@@ -904,7 +882,6 @@
             <option value="short">Barba corta</option>
             <option value="full">Barba piena</option>
             <option value="moustache">Baffi</option>
-            <option value="goatee">Pizzetto</option>
           </select>
 
           <select id="avatar-glasses-admin" onchange="updateAvatarPreview('admin')">
@@ -937,27 +914,6 @@
         </div>
 
         <div class="avatar-controls">
-          
-          <select id="avatar-type-player" onchange="handleAvatarTypeChange('player')">
-            <option value="man">Uomo</option>
-            <option value="woman">Donna</option>
-            <option value="other">Altro</option>
-          </select>
-
-          <select id="avatar-creature-player" class="hidden" onchange="updateAvatarPreview('player')">
-            <option value="alien">Alieno</option>
-            <option value="bear">Orso</option>
-            <option value="dog-small">Cane piccola taglia</option>
-            <option value="dog-medium">Cane media taglia</option>
-            <option value="dog-large">Cane grande taglia</option>
-            <option value="cat-siamese">Gatto siamese</option>
-            <option value="cat-persian">Gatto persiano</option>
-            <option value="cat-black">Gatto nero</option>
-            <option value="cat-red">Gatto rosso</option>
-            <option value="horse">Cavallo</option>
-            <option value="mare">Cavalla</option>
-          </select>
-
           <select id="avatar-face-player" onchange="updateAvatarPreview('player')">
             <option value="oval">Viso ovale</option>
             <option value="round">Viso tondo</option>
@@ -989,7 +945,6 @@
             <option value="blonde">Biondo</option>
             <option value="red">Ramato</option>
             <option value="gray">Grigio</option>
-            <option value="saltpepper">Brizzolato</option>
             <option value="color">Colorato</option>
           </select>
 
@@ -999,7 +954,6 @@
             <option value="short">Barba corta</option>
             <option value="full">Barba piena</option>
             <option value="moustache">Baffi</option>
-            <option value="goatee">Pizzetto</option>
           </select>
 
           <select id="avatar-glasses-player" onchange="updateAvatarPreview('player')">
@@ -1112,8 +1066,6 @@
     }
 
     setTimeout(() => {
-      handleAvatarTypeChange('player');
-      handleAvatarTypeChange('admin');
       updateAvatarPreview('player');
       updateAvatarPreview('admin');
     }, 80);
@@ -1362,7 +1314,6 @@
         blonde: '#D9B45F',
         red: '#A84F2B',
         gray: '#9CA3AF',
-        saltpepper: '#6B7280',
         color: '#7C3AED',
         none: 'transparent'
       },
@@ -1371,8 +1322,6 @@
 
     function getAvatarConfig(scope) {
       return {
-        type: document.getElementById(`avatar-type-${scope}`)?.value || 'man',
-        creature: document.getElementById(`avatar-creature-${scope}`)?.value || 'alien',
         face: document.getElementById(`avatar-face-${scope}`)?.value || 'oval',
         skin: document.getElementById(`avatar-skin-${scope}`)?.value || 'light',
         hair: document.getElementById(`avatar-hair-${scope}`)?.value || 'short',
@@ -1385,7 +1334,7 @@
     }
 
     function setAvatarSelects(scope, cfg) {
-      ['type', 'creature', 'face', 'skin', 'hair', 'hairColor', 'beard', 'glasses'].forEach(key => {
+      ['face', 'skin', 'hair', 'hairColor', 'beard', 'glasses'].forEach(key => {
         const el = document.getElementById(`avatar-${key}-${scope}`);
         if (el && cfg[key]) el.value = cfg[key];
       });
@@ -1394,13 +1343,11 @@
     function randomizeAvatar(scope) {
       const pick = arr => arr[Math.floor(Math.random() * arr.length)];
       const cfg = {
-        type: pick(['man', 'woman', 'other']),
-        creature: pick(['alien', 'bear', 'dog-small', 'dog-medium', 'dog-large', 'cat-siamese', 'cat-persian', 'cat-black', 'cat-red', 'horse', 'mare']),
         face: pick(['oval', 'round', 'square', 'long']),
         skin: pick(['light', 'warm', 'olive', 'medium', 'dark']),
         hair: pick(['short', 'wavy', 'curly', 'long', 'tied', 'bald']),
-        hairColor: pick(['brown', 'dark', 'black', 'blonde', 'red', 'gray', 'saltpepper', 'color']),
-        beard: pick(['none', 'none', 'shadow', 'short', 'full', 'moustache', 'goatee']),
+        hairColor: pick(['brown', 'dark', 'black', 'blonde', 'red', 'gray', 'color']),
+        beard: pick(['none', 'none', 'shadow', 'short', 'full', 'moustache']),
         glasses: pick(['none', 'none', 'round', 'square', 'sun']),
         anon: false
       };
@@ -1414,8 +1361,6 @@
 
     function setAnonymousAvatar(scope) {
       const cfg = {
-        type: 'other',
-        creature: 'alien',
         face: 'oval',
         skin: 'light',
         hair: 'bald',
@@ -1427,29 +1372,6 @@
 
       window[`avatarAnon_${scope}`] = true;
       setAvatarSelects(scope, cfg);
-      updateAvatarPreview(scope);
-    }
-
-
-    function handleAvatarTypeChange(scope) {
-      const type = document.getElementById(`avatar-type-${scope}`)?.value || 'man';
-      const creature = document.getElementById(`avatar-creature-${scope}`);
-      const face = document.getElementById(`avatar-face-${scope}`);
-      const skin = document.getElementById(`avatar-skin-${scope}`);
-      const hair = document.getElementById(`avatar-hair-${scope}`);
-      const hairColor = document.getElementById(`avatar-hairColor-${scope}`);
-      const beard = document.getElementById(`avatar-beard-${scope}`);
-      const glasses = document.getElementById(`avatar-glasses-${scope}`);
-
-      const isOther = type === 'other';
-
-      if (creature) creature.classList.toggle('hidden', !isOther);
-
-      [face, skin, hair, hairColor, beard, glasses].forEach(el => {
-        if (el) el.classList.toggle('hidden', isOther);
-      });
-
-      window[`avatarAnon_${scope}`] = false;
       updateAvatarPreview(scope);
     }
 
@@ -1469,110 +1391,10 @@
       return cfg;
     }
 
-
-    function renderCreatureSvg(cfg = {}) {
-      const creature = cfg.creature || 'alien';
-      const bg = '#10194f';
-
-      const animalColors = {
-        alien: '#9BE7C7',
-        bear: '#8B5A2B',
-        'dog-small': '#D9A066',
-        'dog-medium': '#A06B42',
-        'dog-large': '#4B3428',
-        'cat-siamese': '#E7D2B4',
-        'cat-persian': '#F2E8D8',
-        'cat-black': '#151515',
-        'cat-red': '#C46A32',
-        horse: '#7A4A2A',
-        mare: '#C08A55'
-      };
-
-      const c = animalColors[creature] || '#9BE7C7';
-
-      if (creature === 'alien') {
-        return `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="50" cy="50" r="50" fill="${bg}"/>
-            <ellipse cx="50" cy="52" rx="28" ry="34" fill="${c}"/>
-            <ellipse cx="38" cy="48" rx="8" ry="13" fill="#111" transform="rotate(-18 38 48)"/>
-            <ellipse cx="62" cy="48" rx="8" ry="13" fill="#111" transform="rotate(18 62 48)"/>
-            <path d="M42 68 Q50 73 58 68" fill="none" stroke="#146B54" stroke-width="3" stroke-linecap="round"/>
-            <circle cx="50" cy="18" r="5" fill="#D4AF37"/>
-          </svg>`;
-      }
-
-      if (creature.includes('dog')) {
-        const earSize = creature === 'dog-small' ? 13 : creature === 'dog-large' ? 21 : 17;
-        return `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="50" cy="50" r="50" fill="#E7F7FF"/>
-            <ellipse cx="32" cy="43" rx="${earSize}" ry="22" fill="${c}" transform="rotate(-25 32 43)"/>
-            <ellipse cx="68" cy="43" rx="${earSize}" ry="22" fill="${c}" transform="rotate(25 68 43)"/>
-            <circle cx="50" cy="53" r="27" fill="${c}"/>
-            <circle cx="40" cy="50" r="3" fill="#111"/>
-            <circle cx="60" cy="50" r="3" fill="#111"/>
-            <ellipse cx="50" cy="60" rx="7" ry="5" fill="#111"/>
-            <path d="M50 65 Q43 71 38 66" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"/>
-            <path d="M50 65 Q57 71 62 66" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"/>
-          </svg>`;
-      }
-
-      if (creature.includes('cat')) {
-        return `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="50" cy="50" r="50" fill="#FFF3E3"/>
-            <path d="M30 38 L36 18 L45 36 Z" fill="${c}"/>
-            <path d="M70 38 L64 18 L55 36 Z" fill="${c}"/>
-            <circle cx="50" cy="53" r="27" fill="${c}"/>
-            <ellipse cx="40" cy="51" rx="4" ry="6" fill="#111"/>
-            <ellipse cx="60" cy="51" rx="4" ry="6" fill="#111"/>
-            <path d="M50 59 L45 64 H55 Z" fill="#D16B7A"/>
-            <path d="M35 61 H22 M36 66 H24 M65 61 H78 M64 66 H76" stroke="#111" stroke-width="1.6" stroke-linecap="round"/>
-          </svg>`;
-      }
-
-      if (creature === 'bear') {
-        return `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="50" cy="50" r="50" fill="#F8E7A1"/>
-            <circle cx="30" cy="35" r="13" fill="${c}"/>
-            <circle cx="70" cy="35" r="13" fill="${c}"/>
-            <circle cx="50" cy="54" r="30" fill="${c}"/>
-            <circle cx="40" cy="51" r="3" fill="#111"/>
-            <circle cx="60" cy="51" r="3" fill="#111"/>
-            <ellipse cx="50" cy="62" rx="11" ry="8" fill="#E8C19B"/>
-            <circle cx="50" cy="59" r="4" fill="#111"/>
-          </svg>`;
-      }
-
-      if (creature === 'horse' || creature === 'mare') {
-        const mane = creature === 'horse' ? '#2B1B13' : '#E8D4A2';
-        return `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="50" cy="50" r="50" fill="#DFF7EA"/>
-            <path d="M39 21 C60 16 75 36 67 65 C63 82 39 84 31 67 C24 51 29 27 39 21Z" fill="${c}"/>
-            <path d="M40 20 C49 24 49 46 43 68 C36 57 34 34 40 20Z" fill="${mane}"/>
-            <path d="M38 22 L33 9 L47 20 Z" fill="${c}"/>
-            <path d="M62 23 L72 10 L69 29 Z" fill="${c}"/>
-            <circle cx="43" cy="48" r="3" fill="#111"/>
-            <circle cx="61" cy="48" r="3" fill="#111"/>
-            <ellipse cx="52" cy="67" rx="12" ry="8" fill="#E8C19B" opacity=".65"/>
-          </svg>`;
-      }
-
-      return renderCreatureSvg({ creature: 'alien' });
-    }
-
-
     function renderAvatarSvg(cfg = {}) {
       const anon = !!cfg.anon;
       const bgIndex = Math.abs(JSON.stringify(cfg).split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % avatarPalettes.bg.length;
       const bg = avatarPalettes.bg[bgIndex];
-
-      if (cfg.type === 'other') {
-        return renderCreatureSvg(cfg);
-      }
 
       if (anon) {
         return `
@@ -1609,17 +1431,11 @@
       if (cfg.hair === 'long') hairSvg = `<path d="M24 43 C23 20, 76 18, 76 45 L72 86 C60 78, 40 78, 28 86Z" fill="${hair}"/>`;
       if (cfg.hair === 'tied') hairSvg = `<path d="M27 42 C30 20, 70 20, 73 42 C62 34, 38 34, 27 42Z" fill="${hair}"/><circle cx="77" cy="52" r="9" fill="${hair}"/>`;
 
-      let specklesSvg = '';
-      if (cfg.hairColor === 'saltpepper' && cfg.hair !== 'bald') {
-        specklesSvg = `<circle cx="39" cy="33" r="1.4" fill="#D1D5DB"/><circle cx="50" cy="29" r="1.2" fill="#F3F4F6"/><circle cx="61" cy="35" r="1.3" fill="#D1D5DB"/>`;
-      }
-
       let beardSvg = '';
       if (cfg.beard === 'shadow') beardSvg = `<path d="M34 62 C42 74, 58 74, 66 62 C62 82, 38 82, 34 62Z" fill="#000" opacity=".12"/>`;
       if (cfg.beard === 'short') beardSvg = `<path d="M32 60 C38 82, 62 82, 68 60 C64 76, 36 76, 32 60Z" fill="${hair}" opacity=".78"/>`;
       if (cfg.beard === 'full') beardSvg = `<path d="M30 56 C31 87, 69 87, 70 56 C65 78, 35 78, 30 56Z" fill="${hair}" opacity=".88"/>`;
       if (cfg.beard === 'moustache') beardSvg = `<path d="M38 61 C43 56, 48 58, 50 62 C52 58, 57 56, 62 61 C57 66, 43 66, 38 61Z" fill="${hair}"/>`;
-      if (cfg.beard === 'goatee') beardSvg = `<path d="M38 61 C43 56, 48 58, 50 62 C52 58, 57 56, 62 61 C57 66, 43 66, 38 61Z" fill="${hair}"/><path d="M45 70 Q50 80 55 70 Q51 74 45 70Z" fill="${hair}"/>`;
 
       let glassesSvg = '';
       if (cfg.glasses === 'round') glassesSvg = `<circle cx="41" cy="51" r="7" fill="none" stroke="#111" stroke-width="2"/><circle cx="59" cy="51" r="7" fill="none" stroke="#111" stroke-width="2"/><path d="M48 51 L52 51" stroke="#111" stroke-width="2"/>`;
@@ -1631,7 +1447,6 @@
           <circle cx="50" cy="50" r="50" fill="${bg}"/>
           <circle cx="50" cy="84" r="25" fill="#1A237E" opacity=".88"/>
           ${hairSvg}
-          ${specklesSvg}
           ${faceShapes[cfg.face] || faceShapes.oval}
           ${beardSvg}
           <circle cx="41" cy="52" r="2.2" fill="#1a1a1a"/>
