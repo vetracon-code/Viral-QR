@@ -1,0 +1,2949 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Lumina Live</title>
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Lumina Live — Solo qui. Solo ora.">
+  <meta property="og:description" content="Un gioco sociale anonimo e a tempo: scegli un nick, scopri chi è vicino e scambia reazioni prima che il countdown finisca.">
+  <meta property="og:image" content="https://viral-qr.onrender.com/images/lumina/lumina-live-banner.png">
+  <meta property="og:url" content="https://viral-qr.onrender.com/">
+  <meta property="og:site_name" content="Lumina Live">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Lumina Live — Solo qui. Solo ora.">
+  <meta name="twitter:description" content="Gioco sociale anonimo e a tempo: entra con un nick, scopri chi è presente e partecipa prima che il countdown finisca.">
+  <meta name="twitter:image" content="https://viral-qr.onrender.com/images/lumina/lumina-live-banner.png">
+
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    :root {
+      --accent: #D4AF37;
+      --primary: #1A237E;
+      --danger: #C62828;
+      --bg: #f0f2f5;
+      --dark: #121735;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: #222;
+      text-align: center;
+    }
+
+    .content {
+      padding: 15px;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 18px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.10);
+      margin-bottom: 20px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .admin-field {
+      margin-bottom: 14px;
+      text-align: left;
+    }
+
+    .admin-field label {
+      display: block;
+      font-size: .78rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
+
+    .admin-field input,
+    .admin-field select {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #d9dce5;
+      border-radius: 12px;
+      font-size: .95rem;
+      background: #fff;
+      outline: none;
+    }
+
+    .admin-row {
+      display: grid;
+      grid-template-columns: 1fr 115px;
+      gap: 10px;
+    }
+
+    .admin-choice {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .btn {
+      border: none;
+      padding: 14px 15px;
+      width: 100%;
+      border-radius: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-bottom: 10px;
+      color: white;
+      font-size: .92rem;
+    }
+
+    .btn-gold {
+      background: var(--accent);
+    }
+
+    .btn-green {
+      background: #28a745;
+    }
+
+    .btn-red {
+      background: var(--danger);
+    }
+
+    .btn-light {
+      background: #eef1f7;
+      color: var(--primary);
+      border: 1px solid #dce2f0;
+    }
+
+    .btn-active {
+      background: #fff7dc !important;
+      outline: 3px solid rgba(212,175,55,0.35);
+    }
+
+    #address-confirm-box {
+      background: #fff8e1;
+      border: 1px solid #f1d37a;
+      border-radius: 14px;
+      padding: 12px;
+      font-size: .86rem;
+      margin-bottom: 14px;
+      text-align: left;
+      line-height: 1.4;
+    }
+
+    #game-timer-box {
+      background: var(--dark);
+      color: #fff;
+      border-radius: 16px;
+      padding: 11px 12px;
+      margin: 0 auto 14px auto;
+      max-width: 430px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    }
+
+    #game-timer-box .timer-title {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      opacity: .8;
+    }
+
+    #game-timer {
+      font-size: 1.32rem;
+      font-weight: 900;
+      margin-top: 2px;
+    }
+
+    .player-profile {
+      padding: 20px;
+      background: white;
+      border-bottom: 3px solid var(--accent);
+      border-radius: 18px 18px 0 0;
+    }
+
+    .qr-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 26px 0;
+      background: white;
+      padding: 20px;
+      border-radius: 26px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+      min-width: 215px;
+      min-height: 215px;
+      overflow: visible;
+    }
+
+    #qr-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 180px;
+      height: 180px;
+      background: white;
+      position: relative;
+      z-index: 2;
+    }
+
+    #qr-box img,
+    #qr-box canvas {
+      width: 180px !important;
+      height: 180px !important;
+      display: block !important;
+    }
+
+    #qr-fallback {
+      display: none;
+      width: 180px;
+      min-height: 180px;
+      align-items: center;
+      justify-content: center;
+      border: 1px dashed var(--accent);
+      border-radius: 16px;
+      color: var(--primary);
+      font-size: .82rem;
+      padding: 12px;
+      position: relative;
+      z-index: 2;
+    }
+
+    #notif-list {
+      max-width: 420px;
+      margin: 10px auto;
+      background: #fff;
+      border-radius: 12px;
+      text-align: left;
+      max-height: 210px;
+      overflow-y: auto;
+      border: 1px solid #eee;
+    }
+
+    .notif-item {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-reply {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: .72rem;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .map-box {
+      position: relative;
+      margin-top: 0;
+    }
+
+    #map {
+      height: 320px;
+      width: 100%;
+      border-radius: 0 0 18px 18px;
+      overflow: hidden;
+      background: #dde3ef;
+    }
+
+    .map-recenter-btn {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      z-index: 700;
+      width: auto;
+      padding: 9px 12px;
+      border: none;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.96);
+      color: var(--primary);
+      font-size: .78rem;
+      font-weight: 900;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.22);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .map-popup-name {
+      font-weight: 900;
+      color: var(--primary);
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .map-popup-btn {
+      border: none;
+      background: var(--accent);
+      color: white;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-weight: 900;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .map-popup-self,
+    .map-popup-status {
+      font-size: .78rem;
+      text-align: center;
+      margin-top: 4px;
+      color: #555;
+    }
+
+    .map-popup-status {
+      color: var(--danger);
+      font-weight: 900;
+    }
+
+    #geo-warning {
+      position: fixed;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      z-index: 10000;
+      background: #fff3cd;
+      border: 1px solid #ffda6a;
+      color: #5a4300;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: .9rem;
+      font-weight: 700;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+      text-align: left;
+    }
+
+    #geo-warning strong {
+      display: block;
+      color: #8a5b00;
+      margin-bottom: 4px;
+    }
+
+    #overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,.96);
+      z-index: 9999;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    #reader {
+      width: 300px;
+      margin: 0 auto 18px auto;
+    }
+
+    .interaction-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: min(420px, 100%);
+      margin: 0 auto;
+    }
+
+    .btn-int {
+      padding: 13px 10px;
+      border-radius: 12px;
+      border: 1px solid #ddd;
+      background: #f8f9fa;
+      font-size: .86rem;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    @media (min-width: 900px) {
+      .content {
+        max-width: 980px;
+      }
+
+      #map {
+        height: 420px;
+      }
+    }
+  
+    /* Fix: qrcodejs può generare più nodi. Ne mostriamo sempre uno solo. */
+    #qr-box canvas,
+    #invite-qr-box canvas {
+      display: none !important;
+    }
+
+    #qr-box img,
+    #invite-qr-box img {
+      display: block !important;
+      width: 180px !important;
+      height: 180px !important;
+    }
+
+    #invite-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,.98);
+      z-index: 10020;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 24px 16px;
+      overflow-y: auto;
+    }
+
+    .invite-card {
+      width: min(460px, 100%);
+      background: white;
+      border-radius: 22px;
+      box-shadow: 0 8px 26px rgba(0,0,0,.16);
+      padding: 22px;
+      margin-top: 14px;
+      text-align: center;
+      border: 1px solid #ececec;
+    }
+
+    .invite-title {
+      color: var(--primary);
+      font-size: 1.24rem;
+      line-height: 1.25;
+      margin: 0 0 10px 0;
+      font-weight: 950;
+    }
+
+    .invite-subtitle {
+      font-size: .94rem;
+      line-height: 1.35;
+      margin: 0 0 18px 0;
+      color: #333;
+      font-weight: 700;
+    }
+
+    #invite-qr-box {
+      width: 190px;
+      height: 190px;
+      margin: 16px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      border-radius: 20px;
+      padding: 5px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.12);
+    }
+
+    .share-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+      opacity: .35;
+      filter: grayscale(1);
+      pointer-events: none;
+      transition: all .25s ease;
+    }
+
+    .share-buttons.active {
+      opacity: 1;
+      filter: grayscale(0);
+      pointer-events: auto;
+    }
+
+    .share-btn {
+      border: none;
+      border-radius: 13px;
+      padding: 12px 10px;
+      font-weight: 900;
+      cursor: pointer;
+      color: white;
+      background: var(--primary);
+      font-size: .84rem;
+    }
+
+    .share-btn.gold {
+      background: var(--accent);
+    }
+
+    .invite-note {
+      font-size: .78rem;
+      color: #555;
+      margin-top: 12px;
+      line-height: 1.35;
+    }
+
+    #new-arrival-banner {
+      position: fixed;
+      top: 62px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10030;
+      background: var(--accent);
+      color: white;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-weight: 950;
+      letter-spacing: .05em;
+      box-shadow: 0 6px 22px rgba(0,0,0,.22);
+      display: none;
+      animation: luminaBlink .28s linear infinite alternate;
+    }
+
+    @keyframes luminaBlink {
+      from { opacity: .35; transform: translateX(-50%) scale(.96); }
+      to { opacity: 1; transform: translateX(-50%) scale(1.04); }
+    }
+
+    .qr-wrapper.clean {
+      margin-bottom: 12px;
+    }
+
+  
+    .presence-title {
+      font-size: .78rem;
+      font-weight: 950;
+      color: #1A237E;
+      margin: 12px 0 0 0;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .reaction-wheel {
+      position: relative;
+      width: 310px;
+      height: 310px;
+      margin: 6px auto 12px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .reaction-wheel .qr-wrapper.clean {
+      margin: 0;
+      z-index: 2;
+    }
+
+    .wheel-reaction {
+      position: absolute;
+      width: 54px;
+      height: 54px;
+      border-radius: 999px;
+      border: 1px solid #e1e4ef;
+      background: white;
+      box-shadow: 0 3px 10px rgba(0,0,0,.13);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      cursor: pointer;
+      color: #1A237E;
+      font-weight: 950;
+      z-index: 4;
+    }
+
+    .wheel-reaction .emoji {
+      font-size: 1.22rem;
+      line-height: 1;
+    }
+
+    .wheel-reaction .count {
+      font-size: .76rem;
+      line-height: 1;
+    }
+
+    .wheel-reaction.negative {
+      background: #f8fafc;
+      color: #334155;
+    }
+
+    .w-top { top: 0; left: 50%; transform: translateX(-50%); }
+    .w-top-left { top: 34px; left: 34px; }
+    .w-top-right { top: 34px; right: 34px; }
+    .w-right { top: 50%; right: 0; transform: translateY(-50%); }
+    .w-bottom-right { bottom: 34px; right: 34px; }
+    .w-bottom { bottom: 0; left: 50%; transform: translateX(-50%); }
+    .w-bottom-left { bottom: 34px; left: 34px; }
+    .w-left { top: 50%; left: 0; transform: translateY(-50%); }
+
+    @media (max-width: 380px) {
+      .reaction-wheel {
+        width: 292px;
+        height: 292px;
+      }
+
+      .wheel-reaction {
+        width: 50px;
+        height: 50px;
+      }
+
+      .w-top-left { top: 30px; left: 30px; }
+      .w-top-right { top: 30px; right: 30px; }
+      .w-bottom-right { bottom: 30px; right: 30px; }
+      .w-bottom-left { bottom: 30px; left: 30px; }
+    }
+
+  
+    .avatar-module {
+      margin: 14px 0 16px 0;
+      padding: 14px;
+      border: 1px solid #e6e8f0;
+      border-radius: 16px;
+      background: #fafbff;
+      text-align: left;
+    }
+
+    .avatar-module-title {
+      font-size: .78rem;
+      font-weight: 950;
+      color: #1A237E;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin-bottom: 8px;
+    }
+
+    .avatar-preview-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .avatar-preview {
+      width: 68px;
+      height: 68px;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 3px solid #D4AF37;
+      background: white;
+      flex: 0 0 auto;
+      box-shadow: 0 3px 12px rgba(0,0,0,.12);
+    }
+
+    .avatar-preview svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .avatar-hint {
+      font-size: .82rem;
+      color: #444;
+      line-height: 1.35;
+      font-weight: 650;
+    }
+
+    .avatar-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .avatar-controls select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 11px;
+      border: 1px solid #d9dce5;
+      background: white;
+      font-weight: 750;
+      color: #1A237E;
+    }
+
+    .avatar-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .avatar-mini {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 2px solid #D4AF37;
+      background: white;
+      margin: 0 auto 6px auto;
+    }
+
+    .avatar-mini svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .avatar-marker {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 2px solid #D4AF37;
+      background: white;
+      box-shadow: 0 3px 9px rgba(0,0,0,.28);
+    }
+
+    .avatar-marker.self {
+      border-color: #1A237E;
+    }
+
+    .avatar-marker.outside {
+      opacity: .45;
+      filter: grayscale(.6);
+    }
+
+    .avatar-marker svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    @media (max-width: 420px) {
+      .avatar-controls {
+        grid-template-columns: 1fr;
+      }
+    }
+
+  
+    .duo-status {
+      margin: 10px auto 2px auto;
+      max-width: 360px;
+      background: #fff7dc;
+      border: 1px solid rgba(212,175,55,.55);
+      border-radius: 999px;
+      padding: 8px 12px;
+      color: #1A237E;
+      font-size: .84rem;
+      font-weight: 900;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .duo-status button {
+      border: none;
+      background: transparent;
+      color: #1A237E;
+      font-weight: 950;
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 0;
+      font-size: .84rem;
+    }
+
+    #duo-request {
+      position: fixed;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      z-index: 10040;
+      background: white;
+      border: 1px solid rgba(212,175,55,.65);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 8px 28px rgba(0,0,0,.25);
+      display: none;
+      text-align: left;
+    }
+
+    #duo-request strong {
+      display: block;
+      color: #1A237E;
+      margin-bottom: 5px;
+      font-size: .95rem;
+    }
+
+    .duo-request-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .map-popup-btn.duo {
+      background: #1A237E;
+      margin-top: 7px;
+    }
+
+  
+    .header {
+      background: linear-gradient(135deg, #10194f 0%, #1A237E 55%, #2B2F8F 100%);
+      color: white;
+      padding: 10px 10px 12px 10px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 4px 18px rgba(0,0,0,.22);
+    }
+
+    .live-kicker {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: rgba(212,175,55,.18);
+      border: 1px solid rgba(212,175,55,.45);
+      color: #F8E7A1;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: .68rem;
+      font-weight: 950;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #D4AF37;
+      box-shadow: 0 0 0 0 rgba(212,175,55,.75);
+      animation: livePulse 1.3s infinite;
+    }
+
+    @keyframes livePulse {
+      0% { box-shadow: 0 0 0 0 rgba(212,175,55,.75); }
+      70% { box-shadow: 0 0 0 8px rgba(212,175,55,0); }
+      100% { box-shadow: 0 0 0 0 rgba(212,175,55,0); }
+    }
+
+    #display-title {
+      margin: 0;
+      font-size: 1.02rem;
+      line-height: 1.16;
+      letter-spacing: .035em;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .header-countdown {
+      margin: 7px auto 0 auto;
+      max-width: 420px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 15px;
+      padding: 8px 10px;
+    }
+
+    .header-countdown-label {
+      font-size: .68rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-weight: 900;
+      opacity: .82;
+      margin-bottom: 2px;
+    }
+
+    #header-countdown-time {
+      font-size: 1.55rem;
+      line-height: 1.1;
+      font-weight: 1000;
+      letter-spacing: .03em;
+      color: #F8E7A1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .header-countdown-sub {
+      margin-top: 2px;
+      font-size: .73rem;
+      opacity: .82;
+      font-weight: 750;
+    }
+
+    .header-countdown.expired #header-countdown-time {
+      color: #ffb4b4;
+    }
+
+    #game-timer-box {
+      display: none !important;
+    }
+
+    @media (min-width: 800px) {
+      #display-title {
+        font-size: 1.18rem;
+      }
+
+      #header-countdown-time {
+        font-size: 1.85rem;
+      }
+    }
+
+  
+    .lumina-brand-hero {
+      max-width: 520px;
+      margin: 14px auto 16px auto;
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 8px 28px rgba(0,0,0,.24);
+      background: #10194f;
+      border: 1px solid rgba(212,175,55,.35);
+    }
+
+    .lumina-brand-hero img {
+      width: 100%;
+      display: block;
+    }
+
+    .lumina-brand-mini {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      overflow: hidden;
+      margin: 0 auto 8px auto;
+      box-shadow: 0 4px 16px rgba(0,0,0,.22);
+      border: 1px solid rgba(212,175,55,.35);
+    }
+
+    .lumina-brand-mini img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .header {
+      background:
+        radial-gradient(circle at top center, rgba(212,175,55,.24), transparent 38%),
+        linear-gradient(135deg, #070B24 0%, #10194F 48%, #221552 100%);
+    }
+
+    body {
+      background:
+        radial-gradient(circle at top center, rgba(124,58,237,.12), transparent 320px),
+        #f0f2f5;
+    }
+
+    .card,
+    .player-profile {
+      border: 1px solid rgba(26,35,126,.08);
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #D4AF37 0%, #F2D675 100%);
+      color: #111827;
+    }
+
+    .btn-light {
+      background: #f6f7fc;
+    }
+
+    .live-kicker {
+      background: rgba(212,175,55,.18);
+      border-color: rgba(212,175,55,.45);
+      color: #F8E7A1;
+    }
+
+    #header-countdown-time {
+      color: #F8E7A1;
+      text-shadow: 0 0 12px rgba(212,175,55,.28);
+    }
+
+  
+    .admin-check {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      margin-top: 10px;
+      text-align: left;
+    }
+
+    .admin-check input {
+      width: 20px;
+      height: 20px;
+      margin-top: 2px;
+      accent-color: #D4AF37;
+      flex: 0 0 auto;
+    }
+
+    .admin-check strong {
+      display: block;
+      color: #1A237E;
+      font-size: .88rem;
+      margin-bottom: 3px;
+    }
+
+    .admin-check span {
+      display: block;
+      color: #4b5563;
+      font-size: .78rem;
+      line-height: 1.3;
+      font-weight: 650;
+    }
+
+    .radius-disabled-note {
+      display: none;
+      margin-top: 8px;
+      padding: 9px 10px;
+      border-radius: 12px;
+      background: #eef2ff;
+      color: #1A237E;
+      font-size: .8rem;
+      font-weight: 750;
+      text-align: left;
+    }
+
+    .radius-disabled-note.visible {
+      display: block;
+    }
+
+  
+    .profile-identity {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .profile-avatar {
+      width: 58px;
+      height: 58px;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 3px solid #D4AF37;
+      background: white;
+      box-shadow: 0 4px 14px rgba(0,0,0,.16);
+      flex: 0 0 auto;
+    }
+
+    .profile-avatar svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .profile-name-block {
+      text-align: left;
+      min-width: 0;
+    }
+
+    .profile-name-label {
+      font-size: .68rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #6b7280;
+      font-weight: 900;
+      margin-bottom: 2px;
+    }
+
+    #user-hello {
+      margin: 0;
+      color: #1A237E;
+      font-size: 1.12rem;
+      line-height: 1.15;
+      font-weight: 950;
+      word-break: break-word;
+    }
+
+    @media (max-width: 420px) {
+      .profile-identity {
+        justify-content: flex-start;
+      }
+
+      .profile-avatar {
+        width: 52px;
+        height: 52px;
+      }
+    }
+
+  </style>
+</head>
+
+<body>
+  <div id="new-arrival-banner">NUOVO ARRIVO</div>
+
+  <div id="invite-overlay">
+    <div class="invite-card">
+      <h2 class="invite-title">Vuoi entrare nel gioco?</h2>
+      <p class="invite-subtitle">Scannerizza il QR: è sicuro, anonimo e non serve scaricare nessuna App.</p>
+
+      <div id="invite-qr-box"></div>
+
+      <div class="admin-field" style="margin-top:18px;">
+        <label>Inserisci il tuo nick per attivare la condivisione</label>
+        <input type="text" id="invite-nick" placeholder="Il tuo nickname" oninput="handleInviteNickInput()">
+      </div>
+
+      <div id="invite-share-buttons" class="share-buttons">
+        <button class="share-btn gold" onclick="copyJoinLink()">COPIA LINK</button>
+        <button class="share-btn" onclick="nativeShareJoinLink()">CONDIVIDI</button>
+        <button class="share-btn" style="background:#25D366; grid-column:1 / -1;" onclick="inviteViaWhatsApp()">INVITA VIA WHATSAPP</button>
+      </div>
+
+      <p class="invite-note">
+        Il QR invita gli altri a entrare nella sessione Lumina. Il nickname serve solo per partecipare al gioco.
+      </p>
+
+      <button class="btn" style="background:#666; margin-top:18px;" onclick="closeInviteOverlay()">CHIUDI</button>
+    </div>
+  </div>
+
+  <div id="overlay">
+    <div id="scanner-container" class="hidden">
+      <div id="reader"></div>
+    </div>
+
+    <div id="interaction-menu" style="width:100%;">
+      <h3 id="reply-to-label">Invia a:</h3>
+
+      <div class="interaction-grid">
+        <button class="btn-int" onclick="sendInteraction('Bella energia ✨')">✨ Bella energia</button>
+        <button class="btn-int" onclick="sendInteraction('Ti ho notato 👀')">👀 Ti ho notato</button>
+        <button class="btn-int" onclick="sendInteraction('Mi incuriosisci 🤔')">🤔 Mi incuriosisci</button>
+        <button class="btn-int" onclick="sendInteraction('Ti fai notare 🌟')">🌟 Ti fai notare</button>
+        <button class="btn-int" onclick="sendInteraction('Caffè? ☕')">☕ Caffè?</button>
+        <button class="btn-int" onclick="sendInteraction('Pizza? 🍕')">🍕 Pizza?</button>
+        <button class="btn-int" onclick="sendInteraction('Applauso 👏')">👏 Applauso</button>
+        <button class="btn-int" onclick="sendInteraction('Poco feeling 🧊')">🧊 Poco feeling</button>
+      </div>
+    </div>
+
+    <button class="btn" style="background:#666; margin-top:20px; max-width:420px;" onclick="closeOverlay()">CHIUDI</button>
+  </div>
+
+  <div id="geo-warning" class="hidden"></div>
+
+  <div id="duo-request">
+    <strong id="duo-request-title">Richiesta Duo</strong>
+    <div id="duo-request-text"></div>
+    <div class="duo-request-actions">
+      <button class="btn btn-gold" onclick="acceptDuoInvite()">ACCETTA</button>
+      <button class="btn" style="background:#666;" onclick="declineDuoInvite()">NON ORA</button>
+    </div>
+  </div>
+
+  <div class="header">
+    <div class="lumina-brand-mini">
+      <img src="/images/lumina/lumina-live-icon.png" alt="Lumina Live">
+    </div>
+    <div class="live-kicker"><span class="live-dot"></span> Gioco a tempo</div>
+    <h2 id="display-title">LUMINA LIVE</h2>
+    <div id="header-countdown-box" class="header-countdown hidden">
+      <div class="header-countdown-label">Tempo alla scadenza</div>
+      <div id="header-countdown-time">--:--</div>
+      <div class="header-countdown-sub">Quando il tempo finisce, la sessione si chiude.</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div id="admin-setup" class="card hidden">
+      <div class="lumina-brand-hero">
+        <img src="/images/lumina/lumina-live-banner.png" alt="Lumina Live">
+      </div>
+      <h3>Setup Host</h3>
+
+      <div class="admin-field">
+        <label>Nome evento</label>
+        <input type="text" id="adm-event-name" placeholder="Es. Lumina Live Night">
+      </div>
+
+      <div class="admin-field">
+        <label>Durata gioco</label>
+        <div class="admin-row">
+          <input type="number" id="adm-duration-value" min="1" value="60">
+          <select id="adm-duration-unit">
+            <option value="min">minuti</option>
+            <option value="hour">ore</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="admin-field">
+        <label>Raggio area gioco</label>
+        <div class="admin-row" id="radius-controls">
+          <input type="number" id="adm-radius-value" min="20" step="10" value="150">
+          <select id="adm-radius-unit">
+            <option value="m">metri</option>
+            <option value="km">km</option>
+          </select>
+        </div>
+
+        <label class="admin-check">
+          <input type="checkbox" id="adm-disable-radius" onchange="toggleRadiusControls()">
+          <span>
+            <strong>Disabilita raggio di azione</strong>
+            <span>L'invito sarà valido ovunque online. Gli utenti non verranno esclusi se sono fuori dall'area fisica.</span>
+          </span>
+        </label>
+
+        <div id="radius-disabled-note" class="radius-disabled-note">
+          Modalità online attiva: resta valido il countdown, ma il gioco non controllerà la distanza dei partecipanti.
+        </div>
+      </div>
+
+      <div class="admin-field">
+        <label>Luogo evento</label>
+        <div class="admin-choice">
+          <button type="button" class="btn btn-light btn-active" id="btn-loc-gps" onclick="setLocationMode('gps')">Usa la mia posizione</button>
+          <button type="button" class="btn btn-light" id="btn-loc-address" onclick="setLocationMode('address')">Inserisci indirizzo</button>
+        </div>
+        <input type="text" id="adm-address" class="hidden" placeholder="Es. Piazza Duomo, Milano">
+      </div>
+
+      <div id="address-confirm-box" class="hidden"></div>
+
+      <button class="btn btn-gold" onclick="activateArea()">ATTIVA AREA GIOCO</button>
+
+      <div id="admin-join-section" class="hidden" style="margin-top:18px;">
+        <div class="admin-field">
+          <label>Il tuo nome nel gioco</label>
+          <input type="text" id="adm-nick" placeholder="Nickname Admin">
+        </div>
+
+      <div class="avatar-module" id="admin-avatar-module">
+        <div class="avatar-module-title">Avatar</div>
+        <div class="avatar-preview-row">
+          <div class="avatar-preview" id="avatar-preview-admin"></div>
+          <div class="avatar-hint">Scegli come apparire nel gioco. Puoi renderti riconoscibile o restare più neutro.</div>
+        </div>
+
+        <div class="avatar-controls">
+          
+          <select id="avatar-type-admin" onchange="handleAvatarTypeChange('admin')">
+            <option value="man">Uomo</option>
+            <option value="woman">Donna</option>
+            <option value="other">Altro</option>
+          </select>
+
+          <select id="avatar-creature-admin" class="hidden" onchange="updateAvatarPreview('admin')">
+            <option value="alien">Alieno</option>
+            <option value="bear">Orso</option>
+            <option value="dog-small">Cane piccola taglia</option>
+            <option value="dog-medium">Cane media taglia</option>
+            <option value="dog-large">Cane grande taglia</option>
+            <option value="cat-siamese">Gatto siamese</option>
+            <option value="cat-persian">Gatto persiano</option>
+            <option value="cat-black">Gatto nero</option>
+            <option value="cat-red">Gatto rosso</option>
+            <option value="horse">Cavallo</option>
+            <option value="mare">Cavalla</option>
+          </select>
+
+          <select id="avatar-face-admin" onchange="updateAvatarPreview('admin')">
+            <option value="oval">Viso ovale</option>
+            <option value="round">Viso tondo</option>
+            <option value="square">Viso deciso</option>
+            <option value="long">Viso allungato</option>
+          </select>
+
+          <select id="avatar-skin-admin" onchange="updateAvatarPreview('admin')">
+            <option value="light">Pelle chiara</option>
+            <option value="warm">Pelle calda</option>
+            <option value="olive">Pelle olivastra</option>
+            <option value="medium">Pelle media</option>
+            <option value="dark">Pelle scura</option>
+          </select>
+
+          <select id="avatar-hair-admin" onchange="updateAvatarPreview('admin')">
+            <option value="short">Corti ordinati</option>
+            <option value="crop">Corti pieni</option>
+            <option value="wavy">Mossi medi</option>
+            <option value="curly">Ricci pieni</option>
+            <option value="bob">Caschetto</option>
+            <option value="long">Lunghi sciolti</option>
+            <option value="long-wavy">Lunghi mossi</option>
+            <option value="fringe">Frangia</option>
+            <option value="side">Riga laterale</option>
+            <option value="tied">Raccolti / coda</option>
+            <option value="bun">Chignon</option>
+            <option value="bald">Senza capelli</option>
+          </select>
+
+          <select id="avatar-hairColor-admin" onchange="updateAvatarPreview('admin')">
+            <option value="brown">Castano</option>
+            <option value="dark">Moro</option>
+            <option value="black">Nero</option>
+            <option value="blonde">Biondo</option>
+            <option value="red">Ramato</option>
+            <option value="gray">Grigio</option>
+            <option value="saltpepper">Brizzolato</option>
+            <option value="color">Colorato</option>
+          </select>
+
+          <select id="avatar-beard-admin" onchange="updateAvatarPreview('admin')">
+            <option value="none">Senza barba</option>
+            <option value="shadow">Barba accennata</option>
+            <option value="short">Barba corta</option>
+            <option value="full">Barba piena</option>
+            <option value="moustache">Baffi</option>
+            <option value="goatee">Pizzetto</option>
+            <option value="goatee">Pizzetto</option>
+          </select>
+
+          <select id="avatar-glasses-admin" onchange="updateAvatarPreview('admin')">
+            <option value="none">Senza occhiali</option>
+            <option value="round">Occhiali tondi</option>
+            <option value="square">Occhiali squadrati</option>
+            <option value="sun">Occhiali scuri</option>
+          </select>
+        </div>
+
+        <div class="avatar-actions">
+          <button class="btn btn-light" type="button" onclick="randomizeAvatar('admin')">CASUALE</button>
+          <button class="btn btn-light" type="button" onclick="setAnonymousAvatar('admin')">ANONIMO</button>
+        </div>
+      </div>
+
+        <button class="btn btn-green" onclick="joinGame('admin')">ENTRA NEL GIOCO COME ADMIN</button>
+      </div>
+    </div>
+
+    <div id="player-reg" class="card">
+      <div class="lumina-brand-hero">
+        <img src="/images/lumina/lumina-live-poster.png" alt="Lumina Live">
+      </div>
+      <h3 id="player-reg-title">Benvenuto</h3>
+      <p id="player-reg-subtitle" style="margin-top:-4px; color:#444; font-size:.92rem; line-height:1.35;"></p>
+      <input type="text" id="nickname" placeholder="Tuo Nickname" oninput="handlePlayerNickInput()" style="width:100%; padding:13px; margin-bottom:12px; border-radius:12px; border:1px solid #ddd;">
+      <div class="avatar-module" id="player-avatar-module">
+        <div class="avatar-module-title">Avatar</div>
+        <div class="avatar-preview-row">
+          <div class="avatar-preview" id="avatar-preview-player"></div>
+          <div class="avatar-hint">Scegli come apparire nel gioco. Puoi renderti riconoscibile o restare più neutro.</div>
+        </div>
+
+        <div class="avatar-controls">
+          
+          <select id="avatar-type-player" onchange="handleAvatarTypeChange('player')">
+            <option value="man">Uomo</option>
+            <option value="woman">Donna</option>
+            <option value="other">Altro</option>
+          </select>
+
+          <select id="avatar-creature-player" class="hidden" onchange="updateAvatarPreview('player')">
+            <option value="alien">Alieno</option>
+            <option value="bear">Orso</option>
+            <option value="dog-small">Cane piccola taglia</option>
+            <option value="dog-medium">Cane media taglia</option>
+            <option value="dog-large">Cane grande taglia</option>
+            <option value="cat-siamese">Gatto siamese</option>
+            <option value="cat-persian">Gatto persiano</option>
+            <option value="cat-black">Gatto nero</option>
+            <option value="cat-red">Gatto rosso</option>
+            <option value="horse">Cavallo</option>
+            <option value="mare">Cavalla</option>
+          </select>
+
+          <select id="avatar-face-player" onchange="updateAvatarPreview('player')">
+            <option value="oval">Viso ovale</option>
+            <option value="round">Viso tondo</option>
+            <option value="square">Viso deciso</option>
+            <option value="long">Viso allungato</option>
+          </select>
+
+          <select id="avatar-skin-player" onchange="updateAvatarPreview('player')">
+            <option value="light">Pelle chiara</option>
+            <option value="warm">Pelle calda</option>
+            <option value="olive">Pelle olivastra</option>
+            <option value="medium">Pelle media</option>
+            <option value="dark">Pelle scura</option>
+          </select>
+
+          <select id="avatar-hair-player" onchange="updateAvatarPreview('player')">
+            <option value="short">Corti ordinati</option>
+            <option value="crop">Corti pieni</option>
+            <option value="wavy">Mossi medi</option>
+            <option value="curly">Ricci pieni</option>
+            <option value="bob">Caschetto</option>
+            <option value="long">Lunghi sciolti</option>
+            <option value="long-wavy">Lunghi mossi</option>
+            <option value="fringe">Frangia</option>
+            <option value="side">Riga laterale</option>
+            <option value="tied">Raccolti / coda</option>
+            <option value="bun">Chignon</option>
+            <option value="bald">Senza capelli</option>
+          </select>
+
+          <select id="avatar-hairColor-player" onchange="updateAvatarPreview('player')">
+            <option value="brown">Castano</option>
+            <option value="dark">Moro</option>
+            <option value="black">Nero</option>
+            <option value="blonde">Biondo</option>
+            <option value="red">Ramato</option>
+            <option value="gray">Grigio</option>
+            <option value="saltpepper">Brizzolato</option>
+            <option value="color">Colorato</option>
+          </select>
+
+          <select id="avatar-beard-player" onchange="updateAvatarPreview('player')">
+            <option value="none">Senza barba</option>
+            <option value="shadow">Barba accennata</option>
+            <option value="short">Barba corta</option>
+            <option value="full">Barba piena</option>
+            <option value="moustache">Baffi</option>
+            <option value="goatee">Pizzetto</option>
+            <option value="goatee">Pizzetto</option>
+          </select>
+
+          <select id="avatar-glasses-player" onchange="updateAvatarPreview('player')">
+            <option value="none">Senza occhiali</option>
+            <option value="round">Occhiali tondi</option>
+            <option value="square">Occhiali squadrati</option>
+            <option value="sun">Occhiali scuri</option>
+          </select>
+        </div>
+
+        <div class="avatar-actions">
+          <button class="btn btn-light" type="button" onclick="randomizeAvatar('player')">CASUALE</button>
+          <button class="btn btn-light" type="button" onclick="setAnonymousAvatar('player')">ANONIMO</button>
+        </div>
+      </div>
+
+      <button id="player-join-btn" class="btn btn-gold" onclick="joinGame('player')">ENTRA NEL GIOCO</button>
+    </div>
+
+    <div id="main-dashboard" class="hidden">
+      <div id="game-timer-box" class="hidden">
+        <div class="timer-title">Tempo rimanente</div>
+        <div id="game-timer">--:--</div>
+      </div>
+
+      <div class="player-profile">
+        <div class="profile-identity">
+          <div id="profile-avatar" class="profile-avatar"></div>
+          <div class="profile-name-block">
+            <div class="profile-name-label">Nel gioco come</div>
+            <h3 id="user-hello"></h3>
+          </div>
+        </div>
+        <div id="duo-status" class="duo-status"></div>
+
+        <div class="presence-title">La tua presenza</div>
+
+        <div class="reaction-wheel">
+          <button class="wheel-reaction w-top" onclick="showLikers('Ti ho notato 👀')"><span class="emoji">👀</span><span class="count" id="count-noticed">0</span></button>
+          <button class="wheel-reaction w-top-left" onclick="showLikers('Bella energia ✨')"><span class="emoji">✨</span><span class="count" id="count-energy">0</span></button>
+          <button class="wheel-reaction w-top-right" onclick="showLikers('Mi incuriosisci 🤔')"><span class="emoji">🤔</span><span class="count" id="count-curious">0</span></button>
+          <button class="wheel-reaction w-right" onclick="showLikers('Ti fai notare 🌟')"><span class="emoji">🌟</span><span class="count" id="count-star">0</span></button>
+          <button class="wheel-reaction w-bottom-right" onclick="showLikers('Caffè? ☕')"><span class="emoji">☕</span><span class="count" id="count-coffee">0</span></button>
+          <button class="wheel-reaction w-bottom" onclick="showLikers('Pizza? 🍕')"><span class="emoji">🍕</span><span class="count" id="count-pizza">0</span></button>
+          <button class="wheel-reaction negative w-bottom-left" onclick="showLikers('Poco feeling 🧊')"><span class="emoji">🧊</span><span class="count" id="count-cold">0</span></button>
+          <button class="wheel-reaction w-left" onclick="showLikers('Applauso 👏')"><span class="emoji">👏</span><span class="count" id="count-clap">0</span></button>
+
+          <div class="qr-wrapper clean">
+            <div id="qr-box"></div>
+            <div id="qr-fallback">QR non disponibile.<br>Ricarica la pagina o riprova.</div>
+          </div>
+        </div>
+
+        <div id="notif-list" class="hidden"></div>
+
+        <button class="btn btn-gold" onclick="startScanner()">SCANNERIZZA QUALCUNO</button>
+        <button class="btn" style="background:#1A237E;" onclick="showInviteQr()">MOSTRA QR PER ENTRARE NEL GIOCO</button>
+        <button class="btn" style="background:#25D366;" onclick="inviteViaWhatsApp()">INVITA VIA WHATSAPP</button>
+
+        <div id="admin-powers" class="hidden">
+          <button class="btn btn-red" onclick="resetAll()">RESET SESSIONE</button>
+        </div>
+      </div>
+
+      <div class="map-box">
+        <button class="map-recenter-btn" onclick="recenterMapOnMe()">
+          <span>⌖</span>
+          <span>Ricentra su di me</span>
+        </button>
+        <div id="map"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    const socket = io();
+
+    const isAdminMode =
+      window.location.pathname === '/admin' ||
+      window.location.search.includes('admin=1');
+
+    let myId = null;
+    let markers = {};
+    let html5QrCode = null;
+    let currentTargetId = null;
+    let interactionsReceived = [];
+
+    let locationMode = 'gps';
+    let confirmedAddressLocation = null;
+
+    let timerInterval = null;
+    let currentGameEndTime = null;
+    let currentGameCenter = null;
+    let currentGameRadius = 150;
+    let currentRadiusDisabled = false;
+    let eventCircle = null;
+    let myGeoWatchId = null;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    let pendingTargetFromUrl = urlParams.get('target');
+    const isJoinInvite = urlParams.get('join') === '1';
+    const joinLink = window.location.origin + '/?join=1';
+
+    const map = L.map('map', { zoomControl: true }).setView([45.4642, 9.19], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+    map.zoomControl.setPosition('bottomright');
+
+    if (isAdminMode) {
+      document.getElementById('admin-setup').classList.remove('hidden');
+      document.getElementById('player-reg').classList.add('hidden');
+    }
+
+    setTimeout(() => {
+      handleAvatarTypeChange('player');
+      handleAvatarTypeChange('admin');
+      updateAvatarPreview('player');
+      updateAvatarPreview('admin');
+    }, 80);
+
+
+    if (isJoinInvite) {
+      const title = document.getElementById('player-reg-title');
+      const subtitle = document.getElementById('player-reg-subtitle');
+
+      if (title) title.innerText = 'Vuoi entrare nel gioco?';
+      if (subtitle) subtitle.innerText = 'Inserisci un nick: è sicuro, anonimo e non serve scaricare nessuna App.';
+
+      handlePlayerNickInput();
+    }
+
+
+    function setLocationMode(mode) {
+      locationMode = mode;
+      confirmedAddressLocation = null;
+
+      document.getElementById('adm-address').classList.toggle('hidden', mode !== 'address');
+      document.getElementById('address-confirm-box').classList.add('hidden');
+
+      document.getElementById('btn-loc-gps').classList.toggle('btn-active', mode === 'gps');
+      document.getElementById('btn-loc-address').classList.toggle('btn-active', mode === 'address');
+    }
+
+    async function geocodeAddress(address) {
+      const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(address);
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      const data = await res.json();
+
+      if (!data || !data.length) {
+        throw new Error('Indirizzo non trovato. Prova a scriverlo in modo più completo.');
+      }
+
+      return {
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon),
+        label: data[0].display_name
+      };
+    }
+
+    function getDurationSettings() {
+      const value = parseInt(document.getElementById('adm-duration-value').value, 10) || 60;
+      const unit = document.getElementById('adm-duration-unit').value || 'min';
+      return { value: Math.max(1, value), unit };
+    }
+
+    function toggleRadiusControls() {
+      const disabled = document.getElementById('adm-disable-radius')?.checked || false;
+      const controls = document.getElementById('radius-controls');
+      const note = document.getElementById('radius-disabled-note');
+
+      if (controls) {
+        controls.style.opacity = disabled ? '.35' : '1';
+        controls.style.pointerEvents = disabled ? 'none' : 'auto';
+      }
+
+      if (note) {
+        note.classList.toggle('visible', disabled);
+      }
+    }
+
+    function getRadiusSettings() {
+      const disabled = document.getElementById('adm-disable-radius')?.checked || false;
+
+      if (disabled) {
+        return null;
+      }
+
+      const value = parseFloat(document.getElementById('adm-radius-value').value) || 150;
+      const unit = document.getElementById('adm-radius-unit').value || 'm';
+      const meters = unit === 'km' ? value * 1000 : value;
+      return Math.max(20, Math.round(meters));
+    }
+
+    async function activateArea() {
+      const name = document.getElementById('adm-event-name').value.trim() || 'Lumina Live';
+      const duration = getDurationSettings();
+      const radiusMeters = getRadiusSettings();
+
+      if (locationMode === 'gps') {
+        navigator.geolocation.getCurrentPosition(p => {
+          socket.emit('adminStart', {
+            name,
+            value: duration.value,
+            unit: duration.unit,
+            radiusDisabled: radiusMeters === null,
+            radiusMeters,
+            lat: p.coords.latitude,
+            lng: p.coords.longitude
+          });
+
+          document.getElementById('admin-join-section').classList.remove('hidden');
+        }, () => {
+          alert("Non riesco a leggere la tua posizione. Puoi usare l'indirizzo manuale.");
+        }, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 5000
+        });
+
+        return;
+      }
+
+      const address = document.getElementById('adm-address').value.trim();
+
+      if (!address) {
+        alert("Inserisci un indirizzo prima di attivare l'area gioco.");
+        return;
+      }
+
+      try {
+        const found = await geocodeAddress(address);
+        const box = document.getElementById('address-confirm-box');
+
+        if (!confirmedAddressLocation || confirmedAddressLocation.label !== found.label) {
+          confirmedAddressLocation = found;
+
+          box.innerHTML = `
+            <strong>Confermi questo luogo?</strong><br>
+            ${found.label}<br><br>
+            <button class="btn btn-gold" onclick="activateArea()">CONFERMA E ATTIVA</button>
+          `;
+          box.classList.remove('hidden');
+          return;
+        }
+
+        socket.emit('adminStart', {
+          name,
+          value: duration.value,
+          unit: duration.unit,
+          radiusDisabled: radiusMeters === null,
+          radiusMeters,
+          lat: confirmedAddressLocation.lat,
+          lng: confirmedAddressLocation.lng
+        });
+
+        document.getElementById('admin-join-section').classList.remove('hidden');
+      } catch (e) {
+        alert(e.message || "Errore nella ricerca dell'indirizzo.");
+      }
+    }
+
+    function drawEventCircle() {
+      if (!currentGameCenter) return;
+
+      if (eventCircle) {
+        map.removeLayer(eventCircle);
+        eventCircle = null;
+      }
+
+      if (currentRadiusDisabled) return;
+
+      eventCircle = L.circle([currentGameCenter.lat, currentGameCenter.lng], {
+        radius: currentGameRadius || 150,
+        weight: 2,
+        opacity: 0.9,
+        fillOpacity: 0.08
+      }).addTo(map);
+    }
+
+    function centerMapOnEvent(zoom = 16) {
+      if (!currentGameCenter) return;
+
+      drawEventCircle();
+
+      setTimeout(() => {
+        map.invalidateSize(true);
+        map.setView([currentGameCenter.lat, currentGameCenter.lng], zoom, { animate: false });
+      }, 250);
+
+      setTimeout(() => {
+        map.invalidateSize(true);
+        map.setView([currentGameCenter.lat, currentGameCenter.lng], zoom, { animate: false });
+      }, 800);
+    }
+
+    function startGameTimer(endTime) {
+      currentGameEndTime = endTime;
+
+      const oldBox = document.getElementById('game-timer-box');
+      const oldTimer = document.getElementById('game-timer');
+      const headerBox = document.getElementById('header-countdown-box');
+      const headerTimer = document.getElementById('header-countdown-time');
+
+      if (!endTime) {
+        if (oldBox) oldBox.classList.add('hidden');
+        if (headerBox) headerBox.classList.add('hidden');
+        return;
+      }
+
+      if (oldBox) oldBox.classList.add('hidden');
+      if (headerBox) {
+        headerBox.classList.remove('hidden');
+        headerBox.classList.remove('expired');
+      }
+
+      if (timerInterval) clearInterval(timerInterval);
+
+      function renderTimer() {
+        const remaining = Math.max(0, endTime - Date.now());
+        const totalSeconds = Math.floor(remaining / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        let value;
+        if (hours > 0) {
+          value = `${hours}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+        } else {
+          value = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        if (headerTimer) headerTimer.innerText = value;
+        if (oldTimer) oldTimer.innerText = value;
+
+        if (remaining <= 0) {
+          clearInterval(timerInterval);
+          if (headerTimer) headerTimer.innerText = 'Tempo scaduto';
+          if (oldTimer) oldTimer.innerText = 'Tempo scaduto';
+          if (headerBox) headerBox.classList.add('expired');
+        }
+      }
+
+      renderTimer();
+      timerInterval = setInterval(renderTimer, 1000);
+    }
+
+    socket.on('sync', state => {
+      if (state && state.name) {
+        document.getElementById('display-title').innerText = state.name || 'Lumina Live';
+      }
+
+      if (state && typeof state.radiusDisabled !== 'undefined') {
+        currentRadiusDisabled = !!state.radiusDisabled;
+      }
+
+      if (state && state.radiusMeters) {
+        currentGameRadius = state.radiusMeters;
+      }
+
+      if (state && state.center) {
+        currentGameCenter = state.center;
+        centerMapOnEvent(16);
+      }
+
+      if (state && state.endTime) {
+        startGameTimer(state.endTime);
+      }
+    });
+
+    socket.on('timerStarted', d => {
+      if (d && d.name) {
+        document.getElementById('display-title').innerText = d.name || 'Lumina Live';
+      }
+
+      if (d && typeof d.radiusDisabled !== 'undefined') {
+        currentRadiusDisabled = !!d.radiusDisabled;
+      }
+
+      if (d && d.radiusMeters) {
+        currentGameRadius = d.radiusMeters;
+      }
+
+      if (d && d.center) {
+        currentGameCenter = d.center;
+        centerMapOnEvent(16);
+      }
+
+      if (d && d.endTime) {
+        startGameTimer(d.endTime);
+      }
+    });
+
+
+
+    const avatarPalettes = {
+      skin: {
+        light: '#F4C9A9',
+        warm: '#DFA06E',
+        olive: '#C58B5C',
+        medium: '#A96B43',
+        dark: '#6E3D2E',
+        anon: '#D8DEF5'
+      },
+      hair: {
+        brown: '#6B3F27',
+        dark: '#2B1B13',
+        black: '#111111',
+        blonde: '#D9B45F',
+        red: '#A84F2B',
+        gray: '#9CA3AF',
+        saltpepper: '#6B7280',
+        color: '#7C3AED',
+        none: 'transparent'
+      },
+      bg: ['#F8E7A1', '#DCE7FF', '#EDE7FF', '#DFF7EA', '#FFE3E3', '#E7F7FF']
+    };
+
+    function getAvatarConfig(scope) {
+      return {
+        type: document.getElementById(`avatar-type-${scope}`)?.value || 'man',
+        creature: document.getElementById(`avatar-creature-${scope}`)?.value || 'alien',
+        face: document.getElementById(`avatar-face-${scope}`)?.value || 'oval',
+        skin: document.getElementById(`avatar-skin-${scope}`)?.value || 'light',
+        hair: document.getElementById(`avatar-hair-${scope}`)?.value || 'short',
+        hairColor: document.getElementById(`avatar-hairColor-${scope}`)?.value || 'brown',
+        beard: document.getElementById(`avatar-beard-${scope}`)?.value || 'none',
+        glasses: document.getElementById(`avatar-glasses-${scope}`)?.value || 'none',
+        bg: document.getElementById(`avatar-bg-${scope}`)?.value || 'auto',
+        anon: false
+      };
+    }
+
+    function setAvatarSelects(scope, cfg) {
+      ['type', 'creature', 'face', 'skin', 'hair', 'hairColor', 'beard', 'glasses'].forEach(key => {
+        const el = document.getElementById(`avatar-${key}-${scope}`);
+        if (el && cfg[key]) el.value = cfg[key];
+      });
+    }
+
+    function randomizeAvatar(scope) {
+      const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+      const type = pick(['man', 'woman', 'other']);
+
+      const cfg = {
+        type,
+        creature: pick(['alien', 'bear', 'dog-small', 'dog-medium', 'dog-large', 'cat-siamese', 'cat-persian', 'cat-black', 'cat-red', 'horse', 'mare']),
+        face: type === 'woman'
+          ? pick(['oval', 'round', 'long'])
+          : type === 'man'
+            ? pick(['oval', 'square', 'long'])
+            : pick(['oval', 'round', 'square', 'long']),
+        skin: pick(['light', 'warm', 'olive', 'medium', 'dark']),
+        hair: type === 'woman'
+          ? pick(['wavy', 'curly', 'bob', 'long', 'long-wavy', 'fringe', 'side', 'tied', 'bun'])
+          : type === 'man'
+            ? pick(['short', 'crop', 'wavy', 'curly', 'side', 'bald'])
+            : pick(['short', 'crop', 'wavy', 'curly', 'bob', 'long', 'long-wavy', 'fringe', 'side', 'tied', 'bun', 'bald']),
+        hairColor: pick(['brown', 'dark', 'black', 'blonde', 'red', 'gray', 'saltpepper', 'color']),
+        beard: type === 'man'
+          ? pick(['none', 'shadow', 'short', 'full', 'moustache', 'goatee'])
+          : 'none',
+        glasses: pick(['none', 'none', 'round', 'square', 'sun']),
+        anon: false
+      };
+
+      if (cfg.hair === 'bald') cfg.hairColor = 'gray';
+      if (cfg.type === 'woman') cfg.beard = 'none';
+
+      window[`avatarAnon_${scope}`] = false;
+      setAvatarSelects(scope, cfg);
+      handleAvatarTypeChange(scope);
+      updateAvatarPreview(scope);
+    }
+
+    function setAnonymousAvatar(scope) {
+      const cfg = {
+        type: 'other',
+        creature: 'alien',
+        face: 'oval',
+        skin: 'light',
+        hair: 'bald',
+        hairColor: 'gray',
+        beard: 'none',
+        glasses: 'none',
+        anon: true
+      };
+
+      window[`avatarAnon_${scope}`] = true;
+      setAvatarSelects(scope, cfg);
+      updateAvatarPreview(scope);
+    }
+
+
+
+    function updateAvatarGenderLabels(scope) {
+      const type = document.getElementById(`avatar-type-${scope}`)?.value || 'man';
+      const hair = document.getElementById(`avatar-hair-${scope}`);
+      const beard = document.getElementById(`avatar-beard-${scope}`);
+
+      if (!hair || !beard) return;
+
+      if (type === 'woman') {
+        beard.value = 'none';
+      }
+    }
+
+
+    function handleAvatarTypeChange(scope) {
+      const type = document.getElementById(`avatar-type-${scope}`)?.value || 'man';
+      const creature = document.getElementById(`avatar-creature-${scope}`);
+      const face = document.getElementById(`avatar-face-${scope}`);
+      const skin = document.getElementById(`avatar-skin-${scope}`);
+      const hair = document.getElementById(`avatar-hair-${scope}`);
+      const hairColor = document.getElementById(`avatar-hairColor-${scope}`);
+      const beard = document.getElementById(`avatar-beard-${scope}`);
+      const glasses = document.getElementById(`avatar-glasses-${scope}`);
+
+      const isOther = type === 'other';
+
+      if (creature) creature.classList.toggle('hidden', !isOther);
+
+      [face, skin, hair, hairColor, beard, glasses].forEach(el => {
+        if (el) el.classList.toggle('hidden', isOther);
+      });
+
+      if (type === 'woman') {
+        if (hair && ['short', 'crop', 'bald'].includes(hair.value)) hair.value = 'long-wavy';
+        if (face && face.value === 'square') face.value = 'oval';
+        if (beard) beard.value = 'none';
+      }
+
+      if (type === 'man') {
+        if (hair && ['long', 'long-wavy', 'fringe', 'tied', 'bun'].includes(hair.value)) hair.value = 'crop';
+      }
+
+      updateAvatarGenderLabels(scope);
+      window[`avatarAnon_${scope}`] = false;
+      updateAvatarPreview(scope);
+    }
+
+    function updateAvatarPreview(scope) {
+      const box = document.getElementById(`avatar-preview-${scope}`);
+      if (!box) return;
+
+      const cfg = getAvatarConfig(scope);
+      if (window[`avatarAnon_${scope}`]) cfg.anon = true;
+
+      box.innerHTML = renderAvatarSvg(cfg);
+    }
+
+    function selectedAvatar(scope) {
+      const cfg = getAvatarConfig(scope);
+      if (window[`avatarAnon_${scope}`]) cfg.anon = true;
+      return cfg;
+    }
+
+
+    function renderCreatureSvg(cfg = {}) {
+      const creature = cfg.creature || 'alien';
+      const bg = '#10194f';
+
+      const animalColors = {
+        alien: '#9BE7C7',
+        bear: '#8B5A2B',
+        'dog-small': '#D9A066',
+        'dog-medium': '#A06B42',
+        'dog-large': '#4B3428',
+        'cat-siamese': '#E7D2B4',
+        'cat-persian': '#F2E8D8',
+        'cat-black': '#151515',
+        'cat-red': '#C46A32',
+        horse: '#7A4A2A',
+        mare: '#C08A55'
+      };
+
+      const c = animalColors[creature] || '#9BE7C7';
+
+      if (creature === 'alien') {
+        return `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="50" fill="${bg}"/>
+            <ellipse cx="50" cy="52" rx="28" ry="34" fill="${c}"/>
+            <ellipse cx="38" cy="48" rx="8" ry="13" fill="#111" transform="rotate(-18 38 48)"/>
+            <ellipse cx="62" cy="48" rx="8" ry="13" fill="#111" transform="rotate(18 62 48)"/>
+            <path d="M42 68 Q50 73 58 68" fill="none" stroke="#146B54" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="50" cy="18" r="5" fill="#D4AF37"/>
+          </svg>`;
+      }
+
+      if (creature.includes('dog')) {
+        const earSize = creature === 'dog-small' ? 13 : creature === 'dog-large' ? 21 : 17;
+        return `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="50" fill="#E7F7FF"/>
+            <ellipse cx="32" cy="43" rx="${earSize}" ry="22" fill="${c}" transform="rotate(-25 32 43)"/>
+            <ellipse cx="68" cy="43" rx="${earSize}" ry="22" fill="${c}" transform="rotate(25 68 43)"/>
+            <circle cx="50" cy="53" r="27" fill="${c}"/>
+            <circle cx="40" cy="50" r="3" fill="#111"/>
+            <circle cx="60" cy="50" r="3" fill="#111"/>
+            <ellipse cx="50" cy="60" rx="7" ry="5" fill="#111"/>
+            <path d="M50 65 Q43 71 38 66" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"/>
+            <path d="M50 65 Q57 71 62 66" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"/>
+          </svg>`;
+      }
+
+      if (creature.includes('cat')) {
+        return `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="50" fill="#FFF3E3"/>
+            <path d="M30 38 L36 18 L45 36 Z" fill="${c}"/>
+            <path d="M70 38 L64 18 L55 36 Z" fill="${c}"/>
+            <circle cx="50" cy="53" r="27" fill="${c}"/>
+            <ellipse cx="40" cy="51" rx="4" ry="6" fill="#111"/>
+            <ellipse cx="60" cy="51" rx="4" ry="6" fill="#111"/>
+            <path d="M50 59 L45 64 H55 Z" fill="#D16B7A"/>
+            <path d="M35 61 H22 M36 66 H24 M65 61 H78 M64 66 H76" stroke="#111" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>`;
+      }
+
+      if (creature === 'bear') {
+        return `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="50" fill="#F8E7A1"/>
+            <circle cx="30" cy="35" r="13" fill="${c}"/>
+            <circle cx="70" cy="35" r="13" fill="${c}"/>
+            <circle cx="50" cy="54" r="30" fill="${c}"/>
+            <circle cx="40" cy="51" r="3" fill="#111"/>
+            <circle cx="60" cy="51" r="3" fill="#111"/>
+            <ellipse cx="50" cy="62" rx="11" ry="8" fill="#E8C19B"/>
+            <circle cx="50" cy="59" r="4" fill="#111"/>
+          </svg>`;
+      }
+
+      if (creature === 'horse' || creature === 'mare') {
+        const mane = creature === 'horse' ? '#2B1B13' : '#E8D4A2';
+        return `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="50" fill="#DFF7EA"/>
+            <path d="M39 21 C60 16 75 36 67 65 C63 82 39 84 31 67 C24 51 29 27 39 21Z" fill="${c}"/>
+            <path d="M40 20 C49 24 49 46 43 68 C36 57 34 34 40 20Z" fill="${mane}"/>
+            <path d="M38 22 L33 9 L47 20 Z" fill="${c}"/>
+            <path d="M62 23 L72 10 L69 29 Z" fill="${c}"/>
+            <circle cx="43" cy="48" r="3" fill="#111"/>
+            <circle cx="61" cy="48" r="3" fill="#111"/>
+            <ellipse cx="52" cy="67" rx="12" ry="8" fill="#E8C19B" opacity=".65"/>
+          </svg>`;
+      }
+
+      return renderCreatureSvg({ creature: 'alien' });
+    }
+
+
+    function renderAvatarSvg(cfg = {}) {
+      const anon = !!cfg.anon;
+      const type = cfg.type || 'man';
+      const bgIndex = Math.abs(JSON.stringify(cfg).split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % avatarPalettes.bg.length;
+      const bg = avatarPalettes.bg[bgIndex];
+
+      if (cfg.type === 'other') {
+        return renderCreatureSvg(cfg);
+      }
+
+      if (anon) {
+        return `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="g" cx="50%" cy="38%" r="60%">
+                <stop offset="0%" stop-color="#FFFFFF"/>
+                <stop offset="55%" stop-color="#D4AF37"/>
+                <stop offset="100%" stop-color="#1A237E"/>
+              </radialGradient>
+            </defs>
+            <circle cx="50" cy="50" r="50" fill="#10194f"/>
+            <circle cx="50" cy="50" r="34" fill="url(#g)" opacity=".9"/>
+            <circle cx="50" cy="50" r="16" fill="#fff" opacity=".72"/>
+            <path d="M50 14 L55 38 L79 50 L55 62 L50 86 L45 62 L21 50 L45 38 Z" fill="#fff" opacity=".72"/>
+          </svg>
+        `;
+      }
+
+      const skin = avatarPalettes.skin[cfg.skin] || avatarPalettes.skin.light;
+      const hairColor = cfg.hair === 'bald' ? 'transparent' : (avatarPalettes.hair[cfg.hairColor] || avatarPalettes.hair.brown);
+      const darkStroke = 'rgba(28,18,12,.18)';
+
+      const faceShapes = {
+        oval: `<path d="M50 23 C66 23 76 36 74 55 C72 75 62 86 50 86 C38 86 28 75 26 55 C24 36 34 23 50 23Z" fill="${skin}" stroke="${darkStroke}" stroke-width="1"/>`,
+        round: `<path d="M50 25 C68 25 78 39 76 57 C74 75 63 85 50 85 C37 85 26 75 24 57 C22 39 32 25 50 25Z" fill="${skin}" stroke="${darkStroke}" stroke-width="1"/>`,
+        square: `<path d="M31 29 C38 23 62 23 69 29 C75 36 74 66 69 75 C63 85 37 85 31 75 C26 66 25 36 31 29Z" fill="${skin}" stroke="${darkStroke}" stroke-width="1"/>`,
+        long: `<path d="M50 21 C65 21 74 35 73 56 C72 79 62 89 50 89 C38 89 28 79 27 56 C26 35 35 21 50 21Z" fill="${skin}" stroke="${darkStroke}" stroke-width="1"/>`
+      };
+
+      const shoulderColor = type === 'woman' ? '#5B2B8C' : '#1A237E';
+      const neckAndBody = `
+        <path d="M42 78 H58 V91 H42Z" fill="${skin}" opacity=".96"/>
+        <path d="M22 100 C27 86 38 84 50 84 C62 84 73 86 78 100Z" fill="${shoulderColor}"/>
+        <path d="M34 91 C42 96 58 96 66 91" fill="none" stroke="#D4AF37" stroke-width="2" opacity=".7"/>
+      `;
+
+      let backHair = '';
+      let frontHair = '';
+
+      if (cfg.hair === 'short') {
+        frontHair = `<path d="M27 43 C27 24 39 17 52 18 C66 19 74 29 73 44 C63 36 45 34 27 43Z" fill="${hairColor}"/>
+                     <path d="M30 39 C38 28 56 25 71 39 C59 34 45 34 30 39Z" fill="rgba(255,255,255,.10)"/>`;
+      }
+
+      if (cfg.hair === 'crop') {
+        frontHair = `<path d="M25 45 C24 23 38 14 52 15 C68 16 78 29 76 48 C66 31 42 29 25 45Z" fill="${hairColor}"/>
+                     <path d="M28 36 C42 21 63 22 74 40 C58 32 43 32 28 36Z" fill="rgba(255,255,255,.14)"/>`;
+      }
+
+      if (cfg.hair === 'side') {
+        frontHair = `<path d="M25 45 C27 24 40 17 55 18 C69 19 77 31 75 47 C61 36 43 33 25 45Z" fill="${hairColor}"/>
+                     <path d="M36 25 C45 38 60 36 73 43" fill="none" stroke="rgba(255,255,255,.20)" stroke-width="3.5" stroke-linecap="round"/>`;
+      }
+
+      if (cfg.hair === 'wavy') {
+        frontHair = `<path d="M24 45 C22 28 33 17 45 21 C51 13 68 17 75 31 C82 45 72 53 62 43 C53 51 41 35 24 45Z" fill="${hairColor}"/>
+                     <path d="M31 35 C39 28 48 31 54 24 C61 29 68 30 73 40" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="3" stroke-linecap="round"/>`;
+      }
+
+      if (cfg.hair === 'curly') {
+        frontHair = `
+          <circle cx="29" cy="39" r="11" fill="${hairColor}"/>
+          <circle cx="39" cy="29" r="12" fill="${hairColor}"/>
+          <circle cx="51" cy="25" r="13" fill="${hairColor}"/>
+          <circle cx="63" cy="31" r="12" fill="${hairColor}"/>
+          <circle cx="72" cy="42" r="10" fill="${hairColor}"/>
+          <path d="M26 48 C34 34 65 33 76 48 C67 38 43 37 26 48Z" fill="${hairColor}"/>
+        `;
+      }
+
+      if (cfg.hair === 'bob') {
+        backHair = `<path d="M24 41 C24 20 76 18 77 42 L74 78 C64 86 36 86 26 78Z" fill="${hairColor}"/>`;
+        frontHair = `<path d="M25 45 C30 28 42 20 54 22 C67 24 75 34 75 47 C63 39 45 36 25 45Z" fill="${hairColor}"/>
+                     <path d="M31 31 C41 23 57 24 70 37" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="3" stroke-linecap="round"/>`;
+      }
+
+      if (cfg.hair === 'long') {
+        backHair = `<path d="M22 43 C20 19 80 17 79 45 C79 64 85 82 74 95 C64 86 36 86 26 95 C15 82 21 64 22 43Z" fill="${hairColor}"/>`;
+        frontHair = `<path d="M23 45 C28 26 40 17 54 19 C69 21 78 34 77 50 C63 39 44 36 23 45Z" fill="${hairColor}"/>
+                     <path d="M30 33 C43 24 59 25 72 40" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="3" stroke-linecap="round"/>`;
+      }
+
+      if (cfg.hair === 'long-wavy') {
+        backHair = `<path d="M20 43 C18 20 81 17 81 46 C82 62 90 77 78 96 C63 88 37 88 22 96 C10 77 18 62 20 43Z" fill="${hairColor}"/>`;
+        frontHair = `<path d="M22 46 C25 28 37 18 50 20 C62 13 78 29 78 50 C64 39 47 34 22 46Z" fill="${hairColor}"/>
+                     <path d="M29 36 C39 27 50 34 58 26 C67 32 72 37 76 45" fill="none" stroke="rgba(255,255,255,.20)" stroke-width="3" stroke-linecap="round"/>`;
+      }
+
+      if (cfg.hair === 'fringe') {
+        backHair = `<path d="M25 44 C24 22 76 20 76 45 C66 39 40 39 25 44Z" fill="${hairColor}"/>`;
+        frontHair = `<path d="M26 42 C31 23 45 18 58 21 C69 23 76 33 75 45 C62 39 45 38 26 42Z" fill="${hairColor}"/>
+                     <path d="M30 37 C36 43 42 43 48 37 C54 43 62 43 70 38" fill="none" stroke="${hairColor}" stroke-width="8" stroke-linecap="round"/>`;
+      }
+
+      if (cfg.hair === 'tied') {
+        backHair = `<circle cx="79" cy="54" r="13" fill="${hairColor}"/>
+                    <path d="M24 45 C22 22 78 19 76 46 C61 37 42 36 24 45Z" fill="${hairColor}"/>`;
+        frontHair = `<path d="M26 43 C31 26 43 20 55 22 C68 24 75 34 74 46 C61 38 43 36 26 43Z" fill="${hairColor}"/>`;
+      }
+
+      if (cfg.hair === 'bun') {
+        backHair = `<circle cx="50" cy="18" r="12" fill="${hairColor}"/>
+                    <path d="M25 44 C25 22 75 22 75 44 C64 36 40 36 25 44Z" fill="${hairColor}"/>`;
+        frontHair = `<path d="M27 42 C34 28 46 23 58 25 C69 27 74 35 73 45 C60 37 43 36 27 42Z" fill="${hairColor}"/>`;
+      }
+
+      if (cfg.hair === 'bald') {
+        frontHair = `<path d="M32 32 C39 24 61 24 68 32" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2" stroke-linecap="round"/>`;
+      }
+
+      let specklesSvg = '';
+      if (cfg.hairColor === 'saltpepper' && cfg.hair !== 'bald') {
+        specklesSvg = `
+          <circle cx="35" cy="34" r="1.5" fill="#F3F4F6"/>
+          <circle cx="45" cy="27" r="1.2" fill="#D1D5DB"/>
+          <circle cx="56" cy="29" r="1.4" fill="#F9FAFB"/>
+          <circle cx="66" cy="37" r="1.3" fill="#D1D5DB"/>
+          <path d="M34 38 C43 32 58 31 69 40" fill="none" stroke="#E5E7EB" stroke-width="1.8" opacity=".55"/>
+        `;
+      }
+
+      let beardSvg = '';
+      if (cfg.beard === 'shadow') {
+        beardSvg = `<path d="M34 62 C38 75 44 81 50 81 C56 81 62 75 66 62 C63 84 37 84 34 62Z" fill="#000" opacity=".13"/>`;
+      }
+      if (cfg.beard === 'short') {
+        beardSvg = `<path d="M32 59 C34 80 43 88 50 88 C57 88 66 80 68 59 C64 78 36 78 32 59Z" fill="${hairColor}" opacity=".78"/>`;
+      }
+      if (cfg.beard === 'full') {
+        beardSvg = `<path d="M30 55 C30 86 40 92 50 92 C60 92 70 86 70 55 C66 81 34 81 30 55Z" fill="${hairColor}" opacity=".9"/>`;
+      }
+      if (cfg.beard === 'moustache') {
+        beardSvg = `<path d="M37 61 C43 55 48 58 50 62 C52 58 57 55 63 61 C58 67 42 67 37 61Z" fill="${hairColor}"/>`;
+      }
+      if (cfg.beard === 'goatee') {
+        beardSvg = `<path d="M38 61 C43 56 48 58 50 62 C52 58 57 56 62 61 C57 66 43 66 38 61Z" fill="${hairColor}"/>
+                    <path d="M44 70 C47 81 53 81 56 70 C52 75 48 75 44 70Z" fill="${hairColor}"/>`;
+      }
+
+      let glassesSvg = '';
+      if (cfg.glasses === 'round') {
+        glassesSvg = `<circle cx="41" cy="52" r="7" fill="none" stroke="#111" stroke-width="2"/><circle cx="59" cy="52" r="7" fill="none" stroke="#111" stroke-width="2"/><path d="M48 52 L52 52" stroke="#111" stroke-width="2"/>`;
+      }
+      if (cfg.glasses === 'square') {
+        glassesSvg = `<rect x="34" y="46" width="14" height="10" rx="2" fill="none" stroke="#111" stroke-width="2"/><rect x="52" y="46" width="14" height="10" rx="2" fill="none" stroke="#111" stroke-width="2"/><path d="M48 51 L52 51" stroke="#111" stroke-width="2"/>`;
+      }
+      if (cfg.glasses === 'sun') {
+        glassesSvg = `<path d="M33 45 H48 V56 H36 Z" fill="#111" opacity=".82"/><path d="M52 45 H67 L64 56 H52 Z" fill="#111" opacity=".82"/><path d="M48 50 L52 50" stroke="#111" stroke-width="2"/>`;
+      }
+
+      const brows = type === 'woman'
+        ? `<path d="M35 47 Q41 44 47 47" stroke="#3a2417" stroke-width="1.8" stroke-linecap="round" fill="none"/><path d="M53 47 Q59 44 65 47" stroke="#3a2417" stroke-width="1.8" stroke-linecap="round" fill="none"/>`
+        : `<path d="M34 47 Q41 43 48 46" stroke="#2b1b13" stroke-width="2.4" stroke-linecap="round" fill="none"/><path d="M52 46 Q59 43 66 47" stroke="#2b1b13" stroke-width="2.4" stroke-linecap="round" fill="none"/>`;
+
+      const mouth = type === 'woman'
+        ? `<path d="M43 67 Q50 72 57 67" fill="none" stroke="#A64257" stroke-width="2.4" stroke-linecap="round"/>`
+        : `<path d="M44 67 Q50 70 56 67" fill="none" stroke="#7A3E2D" stroke-width="2.2" stroke-linecap="round"/>`;
+
+      const cheeks = type === 'woman'
+        ? `<circle cx="34" cy="61" r="3.6" fill="#E87993" opacity=".28"/><circle cx="66" cy="61" r="3.6" fill="#E87993" opacity=".28"/>`
+        : '';
+
+      return `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="avatarBg" cx="50%" cy="25%" r="75%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity=".65"/>
+              <stop offset="100%" stop-color="${bg}"/>
+            </radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="50" fill="url(#avatarBg)"/>
+          ${backHair}
+          ${neckAndBody}
+          ${faceShapes[cfg.face] || faceShapes.oval}
+          ${frontHair}
+          ${specklesSvg}
+          ${brows}
+          <circle cx="41" cy="53" r="2.4" fill="#171717"/>
+          <circle cx="59" cy="53" r="2.4" fill="#171717"/>
+          <path d="M50 55 C48 60 47 62 50 63" fill="none" stroke="rgba(80,45,30,.45)" stroke-width="1.4" stroke-linecap="round"/>
+          ${cheeks}
+          ${mouth}
+          ${beardSvg}
+          ${glassesSvg}
+        </svg>
+      `;
+    }
+
+    function showInviteQr() {
+      unlockNotificationAudio();
+
+      const box = document.getElementById('invite-qr-box');
+      const nick = document.getElementById('invite-nick');
+
+      document.getElementById('invite-overlay').style.display = 'flex';
+
+      if (nick) {
+        nick.value = '';
+      }
+
+      handleInviteNickInput();
+
+      if (box) {
+        box.innerHTML = '';
+
+        try {
+          new QRCode(box, {
+            text: joinLink,
+            width: 180,
+            height: 180,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+          });
+
+          setTimeout(() => keepOnlyOneQrNode(box), 80);
+        } catch (e) {
+          console.error(e);
+          box.innerHTML = '<div style="font-size:.85rem;color:#1A237E;">QR invito non disponibile</div>';
+        }
+      }
+    }
+
+    function closeInviteOverlay() {
+      document.getElementById('invite-overlay').style.display = 'none';
+    }
+
+    function handleInviteNickInput() {
+      const value = (document.getElementById('invite-nick')?.value || '').trim();
+      const buttons = document.getElementById('invite-share-buttons');
+
+      if (!buttons) return;
+
+      buttons.classList.toggle('active', value.length >= 2);
+    }
+
+    function inviteViaWhatsApp() {
+      const eventName = document.getElementById('display-title')?.innerText || 'Lumina Live';
+
+      const text =
+        `Ti invito in ${eventName} ✨
+
+` +
+        `Un gioco sociale anonimo e a tempo: scegli un nick, entra nell'area e scopri chi è presente prima che il countdown finisca.
+
+` +
+        `Solo qui. Solo ora.
+
+` +
+        `${joinLink}`;
+
+      const url = 'https://wa.me/?text=' + encodeURIComponent(text);
+      window.open(url, '_blank');
+    }
+
+    function copyJoinLink() {
+      const nick = (document.getElementById('invite-nick')?.value || '').trim();
+
+      if (nick.length < 2) {
+        alert('Inserisci prima il tuo nick.');
+        return;
+      }
+
+      navigator.clipboard.writeText(joinLink).then(() => {
+        alert('Link copiato.');
+      }).catch(() => {
+        prompt('Copia questo link:', joinLink);
+      });
+    }
+
+    function nativeShareJoinLink() {
+      const nick = (document.getElementById('invite-nick')?.value || '').trim();
+
+      if (nick.length < 2) {
+        alert('Inserisci prima il tuo nick.');
+        return;
+      }
+
+      if (navigator.share) {
+        navigator.share({
+          title: 'Lumina Live',
+          text: 'Vuoi entrare nel gioco? È sicuro e anonimo.',
+          url: joinLink
+        }).catch(() => {});
+      } else {
+        copyJoinLink();
+      }
+    }
+
+    function keepOnlyOneQrNode(box) {
+      if (!box) return;
+
+      const nodes = Array.from(box.children);
+      let visibleFound = false;
+
+      nodes.forEach(node => {
+        const tag = node.tagName ? node.tagName.toLowerCase() : '';
+
+        if ((tag === 'img' || tag === 'canvas') && !visibleFound) {
+          node.style.display = 'block';
+          visibleFound = true;
+        } else if (tag === 'img' || tag === 'canvas') {
+          node.style.display = 'none';
+        }
+      });
+    }
+
+    function unlockNotificationAudio() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+        if (!AudioContext) return;
+
+        if (!luminaAudioCtx) {
+          luminaAudioCtx = new AudioContext();
+        }
+
+        if (luminaAudioCtx.state === 'suspended') {
+          luminaAudioCtx.resume();
+        }
+
+        const oscillator = luminaAudioCtx.createOscillator();
+        const gain = luminaAudioCtx.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(1, luminaAudioCtx.currentTime);
+        gain.gain.setValueAtTime(0.00001, luminaAudioCtx.currentTime);
+
+        oscillator.connect(gain);
+        gain.connect(luminaAudioCtx.destination);
+
+        oscillator.start();
+        oscillator.stop(luminaAudioCtx.currentTime + 0.03);
+
+        luminaAudioUnlocked = true;
+      } catch (e) {
+        console.warn('Audio unlock not available', e);
+      }
+    }
+
+    function playNotificationSound() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+        if (!AudioContext) return;
+
+        if (!luminaAudioCtx) {
+          luminaAudioCtx = new AudioContext();
+        }
+
+        if (luminaAudioCtx.state === 'suspended') {
+          luminaAudioCtx.resume();
+        }
+
+        const ctx = luminaAudioCtx;
+
+        const o1 = ctx.createOscillator();
+        const g1 = ctx.createGain();
+
+        o1.type = 'sine';
+        o1.frequency.setValueAtTime(880, ctx.currentTime);
+        g1.gain.setValueAtTime(0.001, ctx.currentTime);
+        g1.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 0.015);
+        g1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+
+        o1.connect(g1);
+        g1.connect(ctx.destination);
+        o1.start();
+        o1.stop(ctx.currentTime + 0.2);
+
+        setTimeout(() => {
+          const o2 = ctx.createOscillator();
+          const g2 = ctx.createGain();
+
+          o2.type = 'sine';
+          o2.frequency.setValueAtTime(1175, ctx.currentTime);
+          g2.gain.setValueAtTime(0.001, ctx.currentTime);
+          g2.gain.exponentialRampToValueAtTime(0.14, ctx.currentTime + 0.015);
+          g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.16);
+
+          o2.connect(g2);
+          g2.connect(ctx.destination);
+          o2.start();
+          o2.stop(ctx.currentTime + 0.18);
+        }, 160);
+      } catch (e) {
+        console.warn('Audio not available', e);
+      }
+    }
+
+    function flashNewArrival() {
+      const banner = document.getElementById('new-arrival-banner');
+      if (!banner) return;
+
+      banner.style.display = 'block';
+
+      setTimeout(() => {
+        banner.style.display = 'none';
+      }, 2000);
+    }
+
+    function handlePlayerNickInput() {
+      const input = document.getElementById('nickname');
+      const btn = document.getElementById('player-join-btn');
+      if (!input || !btn) return;
+
+      const active = input.value.trim().length >= 2;
+      btn.style.opacity = active ? '1' : '.55';
+      btn.style.filter = active ? 'none' : 'grayscale(1)';
+    }
+
+
+    function joinGame(type) {
+      unlockNotificationAudio();
+
+      const nick = type === 'admin'
+        ? document.getElementById('adm-nick').value.trim() || 'Admin'
+        : document.getElementById('nickname').value.trim() || 'Player';
+
+      navigator.geolocation.getCurrentPosition(p => {
+        socket.emit('registerUser', {
+          nick,
+          role: type === 'admin' ? 'admin' : 'player',
+          avatar: selectedAvatar(type),
+          lat: p.coords.latitude,
+          lng: p.coords.longitude
+        });
+
+        if (type === 'admin') {
+          document.getElementById('admin-setup').classList.add('hidden');
+        } else {
+          document.getElementById('player-reg').classList.add('hidden');
+        }
+      }, () => {
+        alert('Per entrare nel gioco devi autorizzare la posizione.');
+      }, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 5000
+      });
+    }
+
+    socket.on('nicknameTaken', d => {
+      const suggestion = d && d.suggestion ? d.suggestion : '';
+      const message = suggestion
+        ? `Questo nick è già in uso. Ti propongo: ${suggestion}`
+        : 'Questo nick è già in uso. Scegline uno diverso.';
+
+      alert(message);
+
+      const input = isAdminMode
+        ? document.getElementById('adm-nick')
+        : document.getElementById('nickname');
+
+      if (input && suggestion) {
+        input.value = suggestion;
+        input.focus();
+      }
+    });
+
+
+    socket.on('duoInviteReceived', d => {
+      pendingDuoInvite = d;
+
+      document.getElementById('duo-request-title').innerText = 'Richiesta Duo';
+      document.getElementById('duo-request-text').innerText =
+        `${d.fromNick || 'Un partecipante'} vuole creare un Duo Lumina con te. Se accetti, apparirete collegati nel gioco.`;
+
+      document.getElementById('duo-request').style.display = 'block';
+      playNotificationSound();
+      flashNewArrival();
+    });
+
+    socket.on('duoCreated', d => {
+      updateDuoStatus(d);
+      alert('Duo creato con ' + (d.partnerNick || 'il partner') + '.');
+    });
+
+    socket.on('duoDeclinedNotice', d => {
+      alert((d && d.nick ? d.nick : 'Il partecipante') + ' ha scelto: non ora.');
+    });
+
+    socket.on('duoError', d => {
+      alert((d && d.message) ? d.message : 'Operazione Duo non riuscita.');
+    });
+
+
+    socket.on('profileCreated', d => {
+      myId = d.id;
+
+      document.getElementById('main-dashboard').classList.remove('hidden');
+      document.getElementById('user-hello').innerText = d.user.nick;
+
+      const profileAvatar = document.getElementById('profile-avatar');
+      if (profileAvatar) {
+        profileAvatar.innerHTML = renderAvatarSvg(d.user.avatar || { anon: true });
+      }
+
+      if (d.game && d.game.center) {
+        currentGameCenter = d.game.center;
+      }
+
+      if (d.game && d.game.radiusMeters) {
+        currentGameRadius = d.game.radiusMeters;
+      }
+
+      if (d.game && d.game.endTime) {
+        startGameTimer(d.game.endTime);
+      }
+
+      if (isAdminMode) {
+        document.getElementById('admin-powers').classList.remove('hidden');
+      }
+
+      renderPersonalQr();
+      startPositionWatch();
+
+      if (currentGameCenter) {
+        centerMapOnEvent(16);
+      }
+
+      if (pendingTargetFromUrl && pendingTargetFromUrl !== myId) {
+        prepareInteractionWith(pendingTargetFromUrl, 'utente selezionato');
+        pendingTargetFromUrl = null;
+      }
+    });
+
+    function renderPersonalQr() {
+      const qrBox = document.getElementById('qr-box');
+      const fallback = document.getElementById('qr-fallback');
+      const qrUrl = window.location.origin + '/?target=' + myId;
+
+      if (!qrBox || !myId) return;
+
+      qrBox.innerHTML = '';
+      qrBox.style.display = 'flex';
+      fallback.style.display = 'none';
+
+      try {
+        if (typeof QRCode !== 'function') {
+          throw new Error('QRCodeJS non caricato.');
+        }
+
+        new QRCode(qrBox, {
+          text: qrUrl,
+          width: 180,
+          height: 180,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.H
+        });
+
+        setTimeout(() => keepOnlyOneQrNode(qrBox), 80);
+      } catch (e) {
+        console.error(e);
+        qrBox.style.display = 'none';
+        fallback.style.display = 'flex';
+      }
+    }
+
+    function startPositionWatch() {
+      if (!navigator.geolocation || myGeoWatchId) return;
+
+      myGeoWatchId = navigator.geolocation.watchPosition(p => {
+        if (!myId) return;
+
+        socket.emit('updatePosition', {
+          lat: p.coords.latitude,
+          lng: p.coords.longitude
+        });
+      }, () => {
+        console.warn('Posizione non aggiornata.');
+      }, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 10000
+      });
+    }
+
+    socket.on('updateMap', users => {
+      const activeIds = new Set(Object.keys(users || {}));
+
+      Object.values(markers).forEach(marker => {
+        const id = marker.__userId;
+        if (!activeIds.has(id)) {
+          map.removeLayer(marker);
+          delete markers[id];
+        }
+      });
+
+      Object.values(users || {}).forEach(u => {
+        if (!u || !u.id || isNaN(u.lat) || isNaN(u.lng)) return;
+
+        const isMe = u.id === myId;
+        const isOutside = !!u.outsideArea;
+        const safeNick = String(u.nick || 'Utente').replace(/'/g, "\\'");
+
+        const avatarHtml = `<div class="avatar-mini">${renderAvatarSvg(u.avatar || { anon: true })}</div>`;
+
+        const popupHtml = isMe
+          ? `${avatarHtml}<div class="map-popup-name">${u.nick || 'Io'}</div><div class="map-popup-self">${isOutside ? 'Fuori area' : 'Sei tu'}</div>`
+          : isOutside
+            ? `${avatarHtml}<div class="map-popup-name">${u.nick || 'Utente'}</div><div class="map-popup-status">Fuori area: temporaneamente non attivo</div>`
+            : `${avatarHtml}<div class="map-popup-name">${u.nick || 'Utente'}</div><button class="map-popup-btn" onclick="prepareInteractionWith('${u.id}', '${safeNick}')">Invia gradimento</button><button class="map-popup-btn duo" onclick="inviteDuo('${u.id}', '${safeNick}')">Crea Duo</button>`;
+
+        if (markers[u.id]) {
+          markers[u.id].setLatLng([u.lat, u.lng]);
+          markers[u.id].setIcon(L.divIcon({
+            className: '',
+            html: `<div class="avatar-marker ${isMe ? 'self' : ''} ${isOutside ? 'outside' : ''}">${renderAvatarSvg(u.avatar || { anon: true })}</div>`,
+            iconSize: [44, 44],
+            iconAnchor: [22, 22],
+            popupAnchor: [0, -22]
+          }));
+          markers[u.id].setPopupContent(popupHtml);
+        } else {
+          const icon = L.divIcon({
+            className: '',
+            html: `<div class="avatar-marker ${isMe ? 'self' : ''} ${isOutside ? 'outside' : ''}">${renderAvatarSvg(u.avatar || { anon: true })}</div>`,
+            iconSize: [44, 44],
+            iconAnchor: [22, 22],
+            popupAnchor: [0, -22]
+          });
+
+          const marker = L.marker([u.lat, u.lng], { icon }).addTo(map).bindPopup(popupHtml);
+
+          marker.__userId = u.id;
+          markers[u.id] = marker;
+        }
+      });
+
+      if (currentGameCenter) {
+        centerMapOnEvent(map.getZoom() || 16);
+      } else {
+        setTimeout(() => map.invalidateSize(true), 300);
+      }
+    });
+
+
+    function inviteDuo(targetId, targetNick) {
+      if (!myId) {
+        alert('Devi prima entrare nel gioco.');
+        return;
+      }
+
+      if (!targetId || targetId === myId) {
+        alert('Scegli un altro partecipante.');
+        return;
+      }
+
+      socket.emit('duoInvite', {
+        to: targetId
+      });
+
+      alert('Invito Duo inviato a ' + (targetNick || 'utente') + '.');
+    }
+
+    function acceptDuoInvite() {
+      if (!pendingDuoInvite) return;
+
+      socket.emit('duoAccept', {
+        inviteId: pendingDuoInvite.inviteId
+      });
+
+      document.getElementById('duo-request').style.display = 'none';
+    }
+
+    function declineDuoInvite() {
+      if (pendingDuoInvite) {
+        socket.emit('duoDecline', {
+          inviteId: pendingDuoInvite.inviteId
+        });
+      }
+
+      pendingDuoInvite = null;
+      document.getElementById('duo-request').style.display = 'none';
+    }
+
+    function updateDuoStatus(duo) {
+      currentDuo = duo || null;
+
+      const box = document.getElementById('duo-status');
+      if (!box) return;
+
+      if (!duo || !duo.partnerId) {
+        box.style.display = 'none';
+        box.innerHTML = '';
+        return;
+      }
+
+      box.style.display = 'flex';
+      box.innerHTML = `In Duo con <button onclick="prepareInteractionWith('${duo.partnerId}', '${String(duo.partnerNick || 'partner').replace(/'/g, "\\'")}')">${duo.partnerNick || 'partner'}</button>`;
+    }
+
+
+    function prepareInteractionWith(id, nick) {
+      if (!id) {
+        alert('Utente non disponibile.');
+        return;
+      }
+
+      if (id === myId) {
+        alert('Questo sei tu. Puoi interagire con gli altri presenti.');
+        return;
+      }
+
+      currentTargetId = id;
+      document.getElementById('overlay').style.display = 'flex';
+      document.getElementById('scanner-container').classList.add('hidden');
+      document.getElementById('reply-to-label').innerText = 'Invia a ' + (nick || 'utente') + ':';
+    }
+
+    function startScanner() {
+      unlockNotificationAudio();
+
+      document.getElementById('overlay').style.display = 'flex';
+      document.getElementById('scanner-container').classList.remove('hidden');
+
+      html5QrCode = new Html5Qrcode('reader');
+
+      html5QrCode.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: 250 },
+        text => {
+          try {
+            currentTargetId = new URL(text).searchParams.get('target');
+          } catch {
+            currentTargetId = null;
+          }
+
+          html5QrCode.stop();
+          document.getElementById('scanner-container').classList.add('hidden');
+
+          if (!currentTargetId) {
+            alert('QR non valido.');
+            closeOverlay();
+            return;
+          }
+
+          document.getElementById('reply-to-label').innerText = 'Scegli cosa inviare:';
+        }
+      );
+    }
+
+    function sendInteraction(type) {
+      unlockNotificationAudio();
+
+      if (!currentTargetId) {
+        alert('Prima scegli o scannerizza un utente.');
+        return;
+      }
+
+      socket.emit('sendLike', {
+        to: currentTargetId,
+        type
+      });
+
+      closeOverlay();
+      alert('Inviato!');
+    }
+
+    socket.on('receiveLike', d => {
+      interactionsReceived.push(d);
+      updateCounters();
+      playNotificationSound();
+      flashNewArrival();
+    });
+
+    socket.on('interactionError', d => {
+      alert((d && d.message) ? d.message : 'Interazione non riuscita.');
+    });
+
+    function updateCounters() {
+      document.getElementById('count-energy').innerText = interactionsReceived.filter(i => i.type.includes('✨')).length;
+      document.getElementById('count-noticed').innerText = interactionsReceived.filter(i => i.type.includes('👀')).length;
+      document.getElementById('count-curious').innerText = interactionsReceived.filter(i => i.type.includes('🤔')).length;
+      document.getElementById('count-star').innerText = interactionsReceived.filter(i => i.type.includes('🌟')).length;
+      document.getElementById('count-coffee').innerText = interactionsReceived.filter(i => i.type.includes('☕')).length;
+      document.getElementById('count-pizza').innerText = interactionsReceived.filter(i => i.type.includes('🍕')).length;
+      document.getElementById('count-clap').innerText = interactionsReceived.filter(i => i.type.includes('👏')).length;
+      document.getElementById('count-cold').innerText = interactionsReceived.filter(i => i.type.includes('🧊')).length;
+    }
+
+    function showLikers(type) {
+      const list = document.getElementById('notif-list');
+
+      const emoji = {
+        'Bella energia ✨': '✨',
+        'Ti ho notato 👀': '👀',
+        'Mi incuriosisci 🤔': '🤔',
+        'Ti fai notare 🌟': '🌟',
+        'Caffè? ☕': '☕',
+        'Pizza? 🍕': '🍕',
+        'Applauso 👏': '👏',
+        'Poco feeling 🧊': '🧊'
+      }[type];
+
+      const filtered = interactionsReceived.filter(i => emoji ? i.type.includes(emoji) : i.type === type);
+
+      list.innerHTML = filtered.length
+        ? `<p style="padding:10px; font-weight:bold; margin:0; border-bottom:1px solid #eee;">Hanno inviato: ${type}</p>`
+        : `<p style="padding:10px; margin:0;">Nessuna interazione ricevuta.</p>`;
+
+      filtered.forEach(i => {
+        list.innerHTML += `
+          <div class="notif-item">
+            <span>${i.fromNick || 'Anonimo'}</span>
+            <button class="btn-reply" onclick="prepareInteractionWith('${i.from}', '${String(i.fromNick || 'utente').replace(/'/g, "\'")}')">RICAMBIA</button>
+          </div>
+        `;
+      });
+
+      list.classList.toggle('hidden');
+    }
+
+    function closeOverlay() {
+      document.getElementById('overlay').style.display = 'none';
+
+      if (html5QrCode) {
+        try { html5QrCode.stop(); } catch(e) {}
+      }
+    }
+
+    function recenterMapOnMe() {
+      if (!navigator.geolocation) {
+        alert('Geolocalizzazione non disponibile su questo dispositivo.');
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(p => {
+        map.invalidateSize(true);
+        map.setView([p.coords.latitude, p.coords.longitude], 17);
+      }, () => {
+        alert('Non riesco a leggere la tua posizione.');
+      }, {
+        enableHighAccuracy: true,
+        timeout: 8000,
+        maximumAge: 10000
+      });
+    }
+
+    function resetAll() {
+      if (confirm('Vuoi davvero resettare la sessione?')) {
+        socket.emit('adminRequestReset');
+      }
+    }
+
+    function showGeoWarning(message) {
+      const box = document.getElementById('geo-warning');
+      box.innerHTML = `<strong>Sei fuori dall'area di gioco</strong>${message}`;
+      box.classList.remove('hidden');
+    }
+
+    function hideGeoWarning() {
+      document.getElementById('geo-warning').classList.add('hidden');
+    }
+
+    socket.on('outsideAreaWarning', d => {
+      const seconds = d && d.graceSeconds ? d.graceSeconds : 120;
+      showGeoWarning(`Rimani visibile per circa ${Math.ceil(seconds / 60)} minuti. Se rientri nell'area, torni automaticamente attivo.`);
+    });
+
+    socket.on('backInsideArea', () => {
+      hideGeoWarning();
+    });
+
+    socket.on('removedOutsideArea', () => {
+      alert("Sei rimasto fuori dall'area di gioco troppo a lungo. Sei stato rimosso dalla sessione.");
+      location.reload();
+    });
+
+    socket.on('gameDeleted', () => {
+      location.href = isAdminMode ? '/admin' : '/';
+    });
+
+    window.addEventListener('resize', () => {
+      if (currentGameCenter) {
+        centerMapOnEvent(map.getZoom() || 16);
+      } else {
+        setTimeout(() => map.invalidateSize(true), 250);
+      }
+    });
+  </script>
+</body>
+</html>
