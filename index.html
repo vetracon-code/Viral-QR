@@ -10,17 +10,20 @@
         .app-container { width: 100%; max-width: 450px; background: white; min-height: 100vh; display: flex; flex-direction: column; }
         .header { background: var(--ws-dark); color: white; padding: 15px; text-align: center; font-weight: bold; position: sticky; top: 0; z-index: 10; }
         .content { padding: 15px; text-align: center; }
-        #timer-display { font-size: 2rem; font-weight: bold; color: #d32f2f; margin-bottom: 10px; }
+        #timer-display { font-size: 2.2rem; font-weight: bold; color: #d32f2f; margin-bottom: 10px; }
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
         .btn-main { background: var(--ws-green); color: white; border: none; padding: 15px; width: 100%; border-radius: 25px; font-weight: bold; cursor: pointer; }
+        
+        /* Controlli Admin */
+        .admin-controls { display: flex; gap: 5px; margin-top: 10px; }
+        .admin-controls input, .admin-controls select { padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
         
         .reaction-grid { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
         .item { display: flex; flex-direction: column; align-items: center; background: #f8f9fa; padding: 8px; border-radius: 10px; min-width: 55px; border: 1px solid #eee; }
         .item span { font-size: 1.5rem; }
         .count { font-size: 0.9rem; font-weight: bold; color: var(--ws-dark); }
 
-        /* Notifiche Ricambia */
-        .notif-card { background: var(--ws-light-green); padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; border-left: 4px solid var(--ws-green); }
+        .notif-card { background: var(--ws-light-green); padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; border-left: 4px solid var(--ws-green); text-align: left; }
         .btn-reciproca { background: var(--ws-dark); color: white; border: none; padding: 5px 12px; border-radius: 15px; font-size: 0.8rem; cursor: pointer; }
         
         .hidden { display: none; }
@@ -33,16 +36,29 @@
         <div class="content">
             <div id="timer-display">00:00:00</div>
 
+            <div id="admin-section" class="card hidden">
+                <h3 style="margin-top:0">Pannello Admin</h3>
+                <div class="admin-controls">
+                    <input type="number" id="duration-value" value="1" style="width: 60px;">
+                    <select id="duration-unit">
+                        <option value="min">Minuti</option>
+                        <option value="ore">Ore</option>
+                        <option value="giorni">Giorni</option>
+                    </select>
+                </div>
+                <button class="btn-main" style="margin-top:10px; background:#334155" onclick="startGlobalGame()">AVVIA GIOCO PER TUTTI</button>
+            </div>
+
             <div id="reg-section" class="card">
-                <p>Scegli un Nickname (o lascialo vuoto per uno casuale)</p>
-                <input type="text" id="nickname" style="width:90%; padding:12px; border-radius:8px; border:1px solid #ccc; margin-bottom:15px;" placeholder="Tuo Nome...">
-                <button class="btn-main" onclick="registerUser()">INIZIA IL GIOCO</button>
+                <p>Inserisci il tuo Nickname</p>
+                <input type="text" id="nickname" style="width:90%; padding:12px; border-radius:8px; border:1px solid #ccc; margin-bottom:15px;" placeholder="Nome (opzionale)...">
+                <button class="btn-main" onclick="registerUser()">ENTRA NEL GIOCO</button>
             </div>
 
             <div id="profile-section" class="hidden">
                 <div class="card">
                     <h3 id="user-display-name"></h3>
-                    <div id="qr-container"><canvas id="qrcode"></canvas></div>
+                    <div id="qr-container" style="margin:10px auto;"><canvas id="qrcode"></canvas></div>
                     <div class="reaction-grid" id="reaction-display"></div>
                 </div>
 
@@ -50,10 +66,6 @@
                     <h4>Interazioni recenti</h4>
                     <div id="notif-list"></div>
                 </div>
-            </div>
-            
-            <div id="admin-section" class="card hidden">
-                <button onclick="socket.emit('adminStart', {value:30, unit:'min'})">Start 30 Min</button>
             </div>
         </div>
     </div>
@@ -65,7 +77,16 @@
         let myProfile = null;
         const icons = ['👍', '❤️', '🔥', '🙌', '😎', '✨'];
 
-        if (new URLSearchParams(window.location.search).has('admin')) document.getElementById('admin-section').classList.remove('hidden');
+        // Mostra admin se presente nell'URL
+        if (new URLSearchParams(window.location.search).has('admin')) {
+            document.getElementById('admin-section').classList.remove('hidden');
+        }
+
+        function startGlobalGame() {
+            const val = document.getElementById('duration-value').value;
+            const unit = document.getElementById('duration-unit').value;
+            socket.emit('adminStart', { value: val, unit: unit });
+        }
 
         function registerUser() {
             const nick = document.getElementById('nickname').value;
@@ -89,7 +110,6 @@
             });
         }
 
-        // Quando ricevo una reazione, creo il tasto per ricambiare
         socket.on('receiveNotification', (data) => {
             const list = document.getElementById('notif-list');
             const id = 'notif-' + Date.now();
@@ -104,17 +124,16 @@
         });
 
         function backReaction(toId, toNick, notifId) {
-            // Ricambia con un cuore di default o la stessa icona
             socket.emit('sendReaction', { 
                 toId: toId, 
                 icon: '❤️', 
                 fromId: socket.id, 
                 fromNick: myProfile.user.nick 
             });
-            // Rimuovi la notifica dopo aver ricambiato
-            document.getElementById(notifId).style.opacity = '0.5';
-            document.getElementById(notifId).querySelector('button').innerText = 'Fatto!';
-            document.getElementById(notifId).querySelector('button').disabled = true;
+            const btn = document.getElementById(notifId).querySelector('button');
+            btn.innerText = 'Fatto!';
+            btn.disabled = true;
+            btn.style.background = '#ccc';
         }
 
         socket.on('updateMyReactions', (reactions) => {
@@ -122,14 +141,29 @@
         });
 
         socket.on('timerStarted', (endTime) => {
-            setInterval(() => {
+            if(window.timerInterval) clearInterval(window.timerInterval);
+            window.timerInterval = setInterval(() => {
                 const diff = endTime - Date.now();
-                if (diff < 0) { location.reload(); return; }
+                if (diff < 0) { 
+                    document.getElementById('timer-display').innerText = "GIOCO FINITO";
+                    return; 
+                }
                 const h = Math.floor(diff / 3600000);
                 const m = Math.floor((diff % 3600000) / 60000);
                 const s = Math.floor((diff % 60000) / 1000);
                 document.getElementById('timer-display').innerText = `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
             }, 1000);
+        });
+
+        socket.on('sync', (state) => {
+            if (state.active && state.endTime) {
+                // Se il gioco è già in corso quando entro
+                const diff = state.endTime - Date.now();
+                if (diff > 0) {
+                    // Trigger manuale per chi entra a gioco iniziato
+                    socket.emit('timerStarted', state.endTime);
+                }
+            }
         });
     </script>
 </body>
