@@ -19,6 +19,8 @@
         .stat-badge { position: absolute; background: white; border: 1px solid #ddd; border-radius: 50px; padding: 5px 12px; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .s-tl { top: -10px; left: -30px; }
         .s-tr { top: -10px; right: -30px; }
+        .s-ml { top: 82px; left: -42px; }
+        .s-mr { top: 82px; right: -42px; }
         .s-bl { bottom: -10px; left: -30px; }
         .s-br { bottom: -10px; right: -30px; }
 
@@ -89,10 +91,12 @@
                 
                 <div class="qr-wrapper">
                     <canvas id="qr-canvas"></canvas>
-                    <div class="stat-badge s-tl" onclick="showLikers('Mi piaci ❤️')">❤️ <span id="count-like">0</span></div>
-                    <div class="stat-badge s-tr" onclick="showLikers('Prendiamo un caffè? ☕')">☕ <span id="count-coffee">0</span></div>
-                    <div class="stat-badge s-bl" onclick="showLikers('Brindiamo! 🥂')">🥂 <span id="count-cheers">0</span></div>
-                    <div class="stat-badge s-br" onclick="showLikers('Applauso 👏')">👏 <span id="count-clap">0</span></div>
+                    <div class="stat-badge s-tl" onclick="showLikers('Mi sei simpatico 😊')">😊 <span id="count-friendly">0</span></div>
+                    <div class="stat-badge s-tr" onclick="showLikers('Ti trovo interessante 🤔')">🤔 <span id="count-interesting">0</span></div>
+                    <div class="stat-badge s-ml" onclick="showLikers('Prendiamo un caffè? ☕')">☕ <span id="count-coffee">0</span></div>
+                    <div class="stat-badge s-mr" onclick="showLikers('Brindiamo! 🥂')">🥂 <span id="count-cheers">0</span></div>
+                    <div class="stat-badge s-bl" onclick="showLikers('Applauso 👏')">👏 <span id="count-clap">0</span></div>
+                    <div class="stat-badge s-br" onclick="showLikers('Mi piaci ❤️')">❤️ <span id="count-like">0</span></div>
                 </div>
 
                 <div id="notif-list" class="hidden"></div>
@@ -155,10 +159,12 @@
         });
 
         function updateCounters() {
-            document.getElementById('count-like').innerText = interactionsReceived.filter(i => i.type.includes('❤️')).length;
+            document.getElementById('count-friendly').innerText = interactionsReceived.filter(i => i.type.includes('😊')).length;
+            document.getElementById('count-interesting').innerText = interactionsReceived.filter(i => i.type.includes('🤔')).length;
             document.getElementById('count-coffee').innerText = interactionsReceived.filter(i => i.type.includes('☕')).length;
             document.getElementById('count-cheers').innerText = interactionsReceived.filter(i => i.type.includes('🥂')).length;
             document.getElementById('count-clap').innerText = interactionsReceived.filter(i => i.type.includes('👏')).length;
+            document.getElementById('count-like').innerText = interactionsReceived.filter(i => i.type.includes('❤️')).length + interactionsReceived.filter(i => i.type.includes('😍')).length;
         }
 
         function showLikers(type) {
@@ -193,10 +199,18 @@
         }
 
         function sendInteraction(type) {
+            if (!currentTargetId) {
+                alert("Prima scannerizza un QR valido.");
+                return;
+            }
             socket.emit('sendLike', { to: currentTargetId, from: myId, type: type });
             closeOverlay();
             alert("Inviato!");
         }
+
+        socket.on('interactionError', d => {
+            alert((d && d.message) ? d.message : "Interazione non riuscita.");
+        });
 
         function closeOverlay() {
             document.getElementById('overlay').style.display = 'none';
