@@ -514,93 +514,74 @@
       to { opacity: 1; transform: translateX(-50%) scale(1.04); }
     }
 
-    .qr-wrapper.clean {
-      margin-bottom: 12px;
+  
+    .reaction-section {
+      margin: 12px auto 14px auto;
+      max-width: 100%;
+      text-align: left;
     }
 
-  
-    .presence-title {
+    .reaction-title {
       font-size: .78rem;
-      font-weight: 950;
+      font-weight: 900;
       color: #1A237E;
-      margin: 12px 0 0 0;
+      margin: 0 0 8px 4px;
       text-transform: uppercase;
       letter-spacing: .04em;
     }
 
-    .reaction-wheel {
-      position: relative;
-      width: 310px;
-      height: 310px;
-      margin: 6px auto 12px auto;
+    .reaction-bar {
       display: flex;
-      align-items: center;
-      justify-content: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 4px 10px 4px;
+      scroll-snap-type: x proximity;
+      -webkit-overflow-scrolling: touch;
     }
 
-    .reaction-wheel .qr-wrapper.clean {
-      margin: 0;
-      z-index: 2;
+    .reaction-bar::-webkit-scrollbar {
+      height: 5px;
     }
 
-    .wheel-reaction {
-      position: absolute;
-      width: 54px;
-      height: 54px;
+    .reaction-bar::-webkit-scrollbar-thumb {
+      background: rgba(26,35,126,.28);
       border-radius: 999px;
+    }
+
+    .reaction-pill {
+      flex: 0 0 auto;
+      min-width: 74px;
       border: 1px solid #e1e4ef;
-      background: white;
-      box-shadow: 0 3px 10px rgba(0,0,0,.13);
-      display: flex;
-      flex-direction: column;
+      border-radius: 999px;
+      background: #fff;
+      padding: 8px 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+      cursor: pointer;
+      font-weight: 900;
+      color: #1A237E;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 1px;
-      cursor: pointer;
-      color: #1A237E;
-      font-weight: 950;
-      z-index: 4;
+      gap: 6px;
+      scroll-snap-align: start;
+      white-space: nowrap;
     }
 
-    .wheel-reaction .emoji {
-      font-size: 1.22rem;
-      line-height: 1;
+    .reaction-pill .emoji {
+      font-size: 1.08rem;
     }
 
-    .wheel-reaction .count {
-      font-size: .76rem;
-      line-height: 1;
+    .reaction-pill .count {
+      font-size: .88rem;
     }
 
-    .wheel-reaction.negative {
-      background: #f8fafc;
+    .reaction-pill.negative {
       color: #334155;
+      background: #f8fafc;
     }
 
-    .w-top { top: 0; left: 50%; transform: translateX(-50%); }
-    .w-top-left { top: 34px; left: 34px; }
-    .w-top-right { top: 34px; right: 34px; }
-    .w-right { top: 50%; right: 0; transform: translateY(-50%); }
-    .w-bottom-right { bottom: 34px; right: 34px; }
-    .w-bottom { bottom: 0; left: 50%; transform: translateX(-50%); }
-    .w-bottom-left { bottom: 34px; left: 34px; }
-    .w-left { top: 50%; left: 0; transform: translateY(-50%); }
-
-    @media (max-width: 380px) {
-      .reaction-wheel {
-        width: 292px;
-        height: 292px;
-      }
-
-      .wheel-reaction {
-        width: 50px;
-        height: 50px;
-      }
-
-      .w-top-left { top: 30px; left: 30px; }
-      .w-top-right { top: 30px; right: 30px; }
-      .w-bottom-right { bottom: 30px; right: 30px; }
-      .w-bottom-left { bottom: 30px; left: 30px; }
+    .qr-wrapper.clean {
+      margin-bottom: 12px;
     }
 
   </style>
@@ -733,21 +714,22 @@
       <div class="player-profile">
         <h3 id="user-hello" style="margin:0;"></h3>
 
-        <div class="presence-title">La tua presenza</div>
+        <div class="qr-wrapper clean">
+          <div id="qr-box"></div>
+          <div id="qr-fallback">QR non disponibile.<br>Ricarica la pagina o riprova.</div>
+        </div>
 
-        <div class="reaction-wheel">
-          <button class="wheel-reaction w-top" onclick="showLikers('Ti ho notato 👀')"><span class="emoji">👀</span><span class="count" id="count-noticed">0</span></button>
-          <button class="wheel-reaction w-top-left" onclick="showLikers('Bella energia ✨')"><span class="emoji">✨</span><span class="count" id="count-energy">0</span></button>
-          <button class="wheel-reaction w-top-right" onclick="showLikers('Mi incuriosisci 🤔')"><span class="emoji">🤔</span><span class="count" id="count-curious">0</span></button>
-          <button class="wheel-reaction w-right" onclick="showLikers('Ti fai notare 🌟')"><span class="emoji">🌟</span><span class="count" id="count-star">0</span></button>
-          <button class="wheel-reaction w-bottom-right" onclick="showLikers('Caffè? ☕')"><span class="emoji">☕</span><span class="count" id="count-coffee">0</span></button>
-          <button class="wheel-reaction w-bottom" onclick="showLikers('Pizza? 🍕')"><span class="emoji">🍕</span><span class="count" id="count-pizza">0</span></button>
-          <button class="wheel-reaction negative w-bottom-left" onclick="showLikers('Poco feeling 🧊')"><span class="emoji">🧊</span><span class="count" id="count-cold">0</span></button>
-          <button class="wheel-reaction w-left" onclick="showLikers('Applauso 👏')"><span class="emoji">👏</span><span class="count" id="count-clap">0</span></button>
-
-          <div class="qr-wrapper clean">
-            <div id="qr-box"></div>
-            <div id="qr-fallback">QR non disponibile.<br>Ricarica la pagina o riprova.</div>
+        <div class="reaction-section">
+          <div class="reaction-title">Reazioni ricevute</div>
+          <div class="reaction-bar">
+            <button class="reaction-pill" onclick="showLikers('Bella energia ✨')"><span class="emoji">✨</span><span class="count" id="count-energy">0</span></button>
+            <button class="reaction-pill" onclick="showLikers('Ti ho notato 👀')"><span class="emoji">👀</span><span class="count" id="count-noticed">0</span></button>
+            <button class="reaction-pill" onclick="showLikers('Mi incuriosisci 🤔')"><span class="emoji">🤔</span><span class="count" id="count-curious">0</span></button>
+            <button class="reaction-pill" onclick="showLikers('Ti fai notare 🌟')"><span class="emoji">🌟</span><span class="count" id="count-star">0</span></button>
+            <button class="reaction-pill" onclick="showLikers('Caffè? ☕')"><span class="emoji">☕</span><span class="count" id="count-coffee">0</span></button>
+            <button class="reaction-pill" onclick="showLikers('Pizza? 🍕')"><span class="emoji">🍕</span><span class="count" id="count-pizza">0</span></button>
+            <button class="reaction-pill" onclick="showLikers('Applauso 👏')"><span class="emoji">👏</span><span class="count" id="count-clap">0</span></button>
+            <button class="reaction-pill negative" onclick="showLikers('Poco feeling 🧊')"><span class="emoji">🧊</span><span class="count" id="count-cold">0</span></button>
           </div>
         </div>
 
