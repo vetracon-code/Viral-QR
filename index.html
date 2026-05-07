@@ -6,9 +6,9 @@
     <title>Lumina Live</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --accent: #D4AF37; --primary: #1A237E; --danger: #C62828; --success: #28a745; }
-        body { font-family: -apple-system, sans-serif; margin:0; background: #f0f2f5; overflow-x: hidden; }
-        .header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top:0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        :root { --accent: #D4AF37; --primary: #1A237E; --danger: #C62828; }
+        body { font-family: -apple-system, sans-serif; margin:0; background: #f0f2f5; color: #222; }
+        .header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top:0; z-index: 1000; }
         #map { height: 300px; width: 100%; background: #eee; }
         .content { padding: 15px; max-width: 500px; margin: auto; }
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
@@ -18,60 +18,67 @@
         .btn-scan { background: #333; }
         .hidden { display: none; }
         input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
-        .stats { position: absolute; top: 5px; right: 10px; font-size: 0.8rem; opacity: 0.8; }
-        #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
-        #reader { width: 100% !important; max-width: 400px; }
-        .like-popup { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; padding: 15px 25px; border-radius: 50px; font-weight: bold; z-index: 10000; animation: slideUp 0.5s ease-out; }
-        @keyframes slideUp { from { bottom: -100px; } to { bottom: 20px; } }
+        #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; overflow-y: auto; }
+        #reader { width: 100%; max-width: 400px; }
+        .interaction-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 20px; }
+        .btn-int { padding: 12px; border-radius: 10px; border: 1px solid #ddd; background: #f8f9fa; font-size: 0.85rem; cursor: pointer; }
+        .like-popup { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: white; color: var(--primary); padding: 15px 20px; border-radius: 15px; font-weight: bold; z-index: 10001; box-shadow: 0 5px 20px rgba(0,0,0,0.3); border-left: 5px solid var(--accent); width: 80%; text-align: center; }
     </style>
 </head>
 <body>
     <div id="overlay">
         <div id="qr-container" class="hidden">
             <canvas id="qr-canvas"></canvas>
-            <p>Il tuo codice Lumina</p>
+            <p>Fatti scannerizzare!</p>
         </div>
         <div id="scanner-container" class="hidden">
             <div id="reader"></div>
-            <p>Inquadra il QR di un altro giocatore</p>
+            <p>Inquadra un QR</p>
+        </div>
+        <div id="interaction-menu" class="hidden" style="width: 100%;">
+            <h3>Invia un messaggio:</h3>
+            <div class="interaction-grid">
+                <button class="btn-int" onclick="sendInteraction('Mi piaci ❤️')">Mi piaci</button>
+                <button class="btn-int" onclick="sendInteraction('Non mi piaci 👎')">Non mi piaci</button>
+                <button class="btn-int" onclick="sendInteraction('Mi sei simpatico 😊')">Mi sei simpatico</button>
+                <button class="btn-int" onclick="sendInteraction('Applauso 👏')">Applauso</button>
+                <button class="btn-int" onclick="sendInteraction('Ti trovo interessante 🤔')">Ti trovo interessante</button>
+                <button class="btn-int" onclick="sendInteraction('Prendiamo un caffè? ☕')">Prendiamo un caffè</button>
+                <button class="btn-int" onclick="sendInteraction('Brindiamo! 🥂')">Brindiamo</button>
+                <button class="btn-int" onclick="sendInteraction('Mi piaci tanto 😍')">Mi piaci tanto</button>
+            </div>
         </div>
         <button class="btn" style="background:#666; margin-top:20px;" onclick="closeOverlay()">CHIUDI</button>
     </div>
 
     <div class="header">
-        <div id="user-count" class="stats">Online: 0</div>
-        <h2 id="display-title" style="margin:0; font-size: 1.2rem;">LUMINA</h2>
-        <div id="timer-display" style="color:var(--accent); font-size: 0.8rem;">Pronto</div>
+        <div id="user-count" style="position:absolute; right:10px; font-size:0.7rem">Online: 0</div>
+        <h2 id="display-title" style="margin:0">LUMINA</h2>
+        <div id="timer-display" style="color:var(--accent); font-size:0.8rem">Pronto</div>
     </div>
 
     <div id="map"></div>
 
     <div class="content">
         <div id="admin-setup" class="card hidden">
-            <h3>Configurazione Host</h3>
+            <h3>Pannello Host</h3>
             <input type="text" id="adm-event-name" placeholder="Nome Evento">
-            <input type="text" id="adm-nick" placeholder="Tuo Nickname Giocatore">
+            <input type="text" id="adm-nick" placeholder="Tuo Nickname">
             <button class="btn btn-gold" onclick="setupGPS()">INIZIA CON GPS</button>
-            <input type="text" id="adm-address" placeholder="O inserisci indirizzo">
-            <button class="btn" style="background:var(--primary)" onclick="setupAddr()">INIZIA CON INDIRIZZO</button>
         </div>
-
         <div id="player-reg" class="card">
             <h3>Partecipa</h3>
             <input type="text" id="nickname" placeholder="Tuo Nickname">
             <button class="btn btn-gold" onclick="joinAsPlayer()">ENTRA NEL GIOCO</button>
         </div>
-
         <div id="main-dashboard" class="hidden">
             <div class="card">
-                <h3 id="user-hello" style="margin-top:0; color:var(--primary);"></h3>
-                
-                <button class="btn btn-gold" onclick="showMyQR()">MOSTRA IL MIO QR</button>
-                <button class="btn btn-scan" onclick="startScanner()">SCANNERIZZA GIOCATORE</button>
-                <button class="btn btn-wa" onclick="inviteWA()">INVITA SU WHATSAPP</button>
-
-                <div id="admin-powers" class="hidden" style="margin-top:20px; padding-top:15px; border-top: 1px dashed #ccc;">
-                    <button class="btn" style="background:#444" onclick="toggleSetup()">MODIFICA EVENTO</button>
+                <h3 id="user-hello" style="margin:0"></h3>
+                <button class="btn btn-gold" onclick="showMyQR()">IL MIO QR</button>
+                <button class="btn btn-scan" onclick="startScanner()">SCANNERIZZA</button>
+                <button class="btn btn-wa" onclick="inviteWA()">INVITA AMICI</button>
+                <div id="admin-powers" class="hidden" style="margin-top:20px; border-top:1px solid #eee; padding-top:10px;">
+                    <button class="btn" style="background:#444" onclick="toggleSetup()">MODIFICA AREA</button>
                     <button class="btn" style="background:var(--danger)" onclick="resetAll()">RESET SESSIONE</button>
                 </div>
             </div>
@@ -82,12 +89,10 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <script>
         const socket = io();
-        let map, isAdmin = false, myId = "", markers = {}, html5QrCode;
+        let map, isAdmin = false, myId = "", markers = {}, html5QrCode, currentTargetId = "";
 
-        // Inizializza Mappa
         map = L.map('map', { zoomControl: false }).setView([45.4642, 9.19], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
@@ -97,14 +102,7 @@
             document.getElementById('player-reg').classList.add('hidden');
         }
 
-        // --- GESTIONE LOGIN ---
         function setupGPS() { navigator.geolocation.getCurrentPosition(p => completeSetup(p.coords.latitude, p.coords.longitude)); }
-        async function setupAddr() {
-            const a = document.getElementById('adm-address').value;
-            const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(a)}`);
-            const d = await r.json();
-            if(d.length > 0) completeSetup(parseFloat(d[0].lat), parseFloat(d[0].lon));
-        }
         function completeSetup(lat, lng) {
             const e = document.getElementById('adm-event-name').value || "Lumina";
             const n = document.getElementById('adm-nick').value || "Host";
@@ -113,6 +111,7 @@
             document.getElementById('admin-setup').classList.add('hidden');
             map.setView([lat, lng], 16);
         }
+
         function joinAsPlayer() {
             navigator.geolocation.getCurrentPosition(p => {
                 const n = document.getElementById('nickname').value || "Player";
@@ -122,11 +121,11 @@
             });
         }
 
-        // --- FUNZIONI SOCIAL ---
         function showMyQR() {
             document.getElementById('overlay').style.display = 'flex';
             document.getElementById('qr-container').classList.remove('hidden');
             document.getElementById('scanner-container').classList.add('hidden');
+            document.getElementById('interaction-menu').classList.add('hidden');
             QRCode.toCanvas(document.getElementById('qr-canvas'), window.location.origin + "/?target=" + myId, { width: 250 });
         }
 
@@ -134,43 +133,55 @@
             document.getElementById('overlay').style.display = 'flex';
             document.getElementById('scanner-container').classList.remove('hidden');
             document.getElementById('qr-container').classList.add('hidden');
+            document.getElementById('interaction-menu').classList.add('hidden');
             html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-                const targetId = new URL(text).searchParams.get("target");
-                if(targetId) {
-                    socket.emit('sendLike', { to: targetId, from: myId });
-                    alert("Like inviato!");
-                    closeOverlay();
-                }
+                const url = new URL(text);
+                currentTargetId = url.searchParams.get("target");
+                if(currentTargetId) { html5QrCode.stop(); openMenu(); }
             });
         }
 
-        function inviteWA() {
-            const text = "Vieni a giocare a Lumina con me! Entra qui: " + window.location.origin;
-            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        function openMenu() {
+            document.getElementById('scanner-container').classList.add('hidden');
+            document.getElementById('interaction-menu').classList.remove('hidden');
         }
 
-        function closeOverlay() {
-            document.getElementById('overlay').style.display = 'none';
-            if(html5QrCode) html5QrCode.stop();
+        function sendInteraction(type) {
+            socket.emit('sendLike', { to: currentTargetId, from: myId, type: type });
+            alert("Inviato!");
+            closeOverlay();
         }
-
-        // --- EVENTI ---
-        socket.on('profileCreated', d => {
-            myId = d.id;
-            document.getElementById('main-dashboard').classList.remove('hidden');
-            document.getElementById('user-hello').innerText = "In gioco come: " + d.user.nick;
-            if(isAdmin) document.getElementById('admin-powers').classList.remove('hidden');
-        });
 
         socket.on('receiveLike', d => {
             const p = document.createElement('div');
             p.className = 'like-popup';
-            p.innerText = `❤️ Qualcuno ha scansionato il tuo QR!`;
+            p.innerHTML = `Messaggio ricevuto:<br><span style="font-size:1.4rem">${d.type}</span>`;
             document.body.appendChild(p);
-            setTimeout(() => p.remove(), 4000);
+            setTimeout(() => p.remove(), 5000);
         });
 
+        function inviteWA() {
+            window.open(`https://wa.me/?text=${encodeURIComponent("Gioca a Lumina con me! " + window.location.origin)}`, '_blank');
+        }
+
+        function closeOverlay() {
+            document.getElementById('overlay').style.display = 'none';
+            if(html5QrCode) try { html5QrCode.stop(); } catch(e){}
+        }
+
+        socket.on('profileCreated', d => {
+            myId = d.id;
+            document.getElementById('main-dashboard').classList.remove('hidden');
+            document.getElementById('user-hello').innerText = "Ciao, " + d.user.nick;
+            if(isAdmin) document.getElementById('admin-powers').classList.remove('hidden');
+        });
+
+        socket.on('updateStats', c => { document.getElementById('user-count').innerText = "Online: " + c; });
+        socket.on('timerStarted', d => { 
+            document.getElementById('display-title').innerText = d.name;
+            document.getElementById('timer-display').innerText = "Gioco in corso";
+        });
         socket.on('updateMap', users => {
             Object.values(users).forEach(u => {
                 if(u.id !== socket.id) {
@@ -179,14 +190,8 @@
                 }
             });
         });
-
-        socket.on('timerStarted', d => {
-            document.getElementById('display-title').innerText = d.name;
-            document.getElementById('timer-display').innerText = "Gioco in corso";
-        });
-
         function toggleSetup() { document.getElementById('admin-setup').classList.toggle('hidden'); }
-        function resetAll() { if(confirm("RESET TOTALE?")) socket.emit('adminRequestReset'); }
+        function resetAll() { if(confirm("RESET?")) socket.emit('adminRequestReset'); }
         socket.on('gameDeleted', () => location.href = window.location.origin + (isAdmin ? "?admin=1" : ""));
     </script>
 </body>
