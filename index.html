@@ -7,86 +7,70 @@
     <style>
         :root { --ws-green: #25D366; --ws-bg: #f0f2f5; --ws-dark: #075E54; --ws-light-green: #dcf8c6; }
         body { font-family: sans-serif; background: var(--ws-bg); margin: 0; display: flex; justify-content: center; }
-        .app-container { width: 100%; max-width: 450px; background: white; min-height: 100vh; display: flex; flex-direction: column; }
-        .header { background: var(--ws-dark); color: white; padding: 15px; text-align: center; font-weight: bold; position: sticky; top: 0; z-index: 10; }
-        .content { padding: 15px; text-align: center; }
-        #timer-display { font-size: 2.2rem; font-weight: bold; color: #d32f2f; margin-bottom: 10px; }
+        .app-container { width: 100%; max-width: 450px; background: white; min-height: 100vh; display: flex; flex-direction: column; position: relative; }
+        .header { background: var(--ws-dark); color: white; padding: 15px; text-align: center; }
+        .content { padding: 15px; text-align: center; flex: 1; padding-bottom: 80px; }
+        #timer-display { font-size: 2rem; font-weight: bold; color: #d32f2f; margin: 10px 0; }
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
         .btn-main { background: var(--ws-green); color: white; border: none; padding: 15px; width: 100%; border-radius: 25px; font-weight: bold; cursor: pointer; }
         
-        /* Controlli Admin */
-        .admin-controls { display: flex; gap: 5px; margin-top: 10px; }
-        .admin-controls input, .admin-controls select { padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
-        
-        .reaction-grid { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
-        .item { display: flex; flex-direction: column; align-items: center; background: #f8f9fa; padding: 8px; border-radius: 10px; min-width: 55px; border: 1px solid #eee; }
-        .item span { font-size: 1.5rem; }
-        .count { font-size: 0.9rem; font-weight: bold; color: var(--ws-dark); }
+        /* Scanner Styles */
+        #reader { width: 100%; border-radius: 15px; overflow: hidden; margin-bottom: 15px; display: none; }
+        .scan-btn-fixed { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 80%; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 
-        .notif-card { background: var(--ws-light-green); padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; border-left: 4px solid var(--ws-green); text-align: left; }
-        .btn-reciproca { background: var(--ws-dark); color: white; border: none; padding: 5px 12px; border-radius: 15px; font-size: 0.8rem; cursor: pointer; }
-        
+        .reaction-grid { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
+        .item { display: flex; flex-direction: column; align-items: center; background: #f8f9fa; padding: 8px; border-radius: 10px; min-width: 50px; border: 1px solid #eee; }
+        .count { font-size: 0.8rem; font-weight: bold; color: var(--ws-dark); }
+        .notif-card { background: var(--ws-light-green); padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; border-left: 4px solid var(--ws-green); }
         .hidden { display: none; }
-        #notifications-area { text-align: left; margin-top: 20px; }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <div class="header">VIRAL QR SOCIAL</div>
+        <div class="header">
+            <h2 style="margin:0">Viral QR</h2>
+            <p style="margin:5px 0 0 0; font-size:0.8rem; opacity:0.9">Scansiona chi ti circonda e scopri quanto piaci!</p>
+        </div>
+
         <div class="content">
             <div id="timer-display">00:00:00</div>
 
             <div id="admin-section" class="card hidden">
-                <h3 style="margin-top:0">Pannello Admin</h3>
-                <div class="admin-controls">
-                    <input type="number" id="duration-value" value="1" style="width: 60px;">
-                    <select id="duration-unit">
-                        <option value="min">Minuti</option>
-                        <option value="ore">Ore</option>
-                        <option value="giorni">Giorni</option>
-                    </select>
-                </div>
-                <button class="btn-main" style="margin-top:10px; background:#334155" onclick="startGlobalGame()">AVVIA GIOCO PER TUTTI</button>
+                <input type="number" id="duration-value" value="1" style="width:50px">
+                <select id="duration-unit"><option value="min">Min</option><option value="ore">Ore</option></select>
+                <button onclick="startGlobalGame()">AVVIA GIOCO</button>
             </div>
 
             <div id="reg-section" class="card">
-                <p>Inserisci il tuo Nickname</p>
-                <input type="text" id="nickname" style="width:90%; padding:12px; border-radius:8px; border:1px solid #ccc; margin-bottom:15px;" placeholder="Nome (opzionale)...">
+                <input type="text" id="nickname" style="width:85%; padding:10px; margin-bottom:10px;" placeholder="Tuo Nickname...">
                 <button class="btn-main" onclick="registerUser()">ENTRA NEL GIOCO</button>
             </div>
 
             <div id="profile-section" class="hidden">
+                <div id="reader"></div>
+                
                 <div class="card">
                     <h3 id="user-display-name"></h3>
-                    <div id="qr-container" style="margin:10px auto;"><canvas id="qrcode"></canvas></div>
+                    <div id="qr-container"><canvas id="qrcode"></canvas></div>
                     <div class="reaction-grid" id="reaction-display"></div>
                 </div>
-
-                <div id="notifications-area">
-                    <h4>Interazioni recenti</h4>
-                    <div id="notif-list"></div>
-                </div>
+                <div id="notif-list"></div>
             </div>
         </div>
+
+        <button id="toggle-scan" class="btn-main scan-btn-fixed hidden" onclick="toggleScanner()">📷 SCANSIONA QR</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
         const socket = io();
         let myProfile = null;
+        let html5QrCode = null;
         const icons = ['👍', '❤️', '🔥', '🙌', '😎', '✨'];
 
-        // Mostra admin se presente nell'URL
-        if (new URLSearchParams(window.location.search).has('admin')) {
-            document.getElementById('admin-section').classList.remove('hidden');
-        }
-
-        function startGlobalGame() {
-            const val = document.getElementById('duration-value').value;
-            const unit = document.getElementById('duration-unit').value;
-            socket.emit('adminStart', { value: val, unit: unit });
-        }
+        if (new URLSearchParams(window.location.search).has('admin')) document.getElementById('admin-section').classList.remove('hidden');
 
         function registerUser() {
             const nick = document.getElementById('nickname').value;
@@ -97,10 +81,33 @@
             myProfile = data;
             document.getElementById('reg-section').classList.add('hidden');
             document.getElementById('profile-section').classList.remove('hidden');
+            document.getElementById('toggle-scan').classList.remove('hidden');
             document.getElementById('user-display-name').innerText = data.user.nick;
             renderReactions(data.user.reactions);
-            QRCode.toCanvas(document.getElementById('qrcode'), window.location.origin, { width: 180 });
+            QRCode.toCanvas(document.getElementById('qrcode'), window.location.origin + "/?target=" + socket.id, { width: 180 });
         });
+
+        function toggleScanner() {
+            const readerDiv = document.getElementById('reader');
+            if (readerDiv.style.display === 'block') {
+                html5QrCode.stop();
+                readerDiv.style.display = 'none';
+            } else {
+                readerDiv.style.display = 'block';
+                html5QrCode = new Html5Qrcode("reader");
+                html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, 
+                    (decodedText) => {
+                        const url = new URL(decodedText);
+                        const targetId = url.searchParams.get('target');
+                        if(targetId) {
+                            alert("Hai inquadrato un profilo! Inviagli un ❤️");
+                            socket.emit('sendReaction', { toId: targetId, icon: '❤️', fromId: socket.id, fromNick: myProfile.user.nick });
+                            toggleScanner();
+                        }
+                    }
+                );
+            }
+        }
 
         function renderReactions(reactions) {
             const grid = document.getElementById('reaction-display');
@@ -112,58 +119,23 @@
 
         socket.on('receiveNotification', (data) => {
             const list = document.getElementById('notif-list');
-            const id = 'notif-' + Date.now();
             const div = document.createElement('div');
             div.className = 'notif-card';
-            div.id = id;
-            div.innerHTML = `
-                <span><b>${data.fromNick}</b> ti ha inviato ${data.icon}</span>
-                <button class="btn-reciproca" onclick="backReaction('${data.fromId}', '${data.fromNick}', '${id}')">Ricambia</button>
-            `;
+            div.innerHTML = `<span><b>${data.fromNick}</b> ti ha inviato ${data.icon}</span><button class="btn-main" style="width:auto; padding:5px 10px; font-size:0.7rem;" onclick="this.parentElement.remove()">OK</button>`;
             list.prepend(div);
         });
 
-        function backReaction(toId, toNick, notifId) {
-            socket.emit('sendReaction', { 
-                toId: toId, 
-                icon: '❤️', 
-                fromId: socket.id, 
-                fromNick: myProfile.user.nick 
-            });
-            const btn = document.getElementById(notifId).querySelector('button');
-            btn.innerText = 'Fatto!';
-            btn.disabled = true;
-            btn.style.background = '#ccc';
-        }
-
-        socket.on('updateMyReactions', (reactions) => {
-            renderReactions(reactions);
-        });
-
+        socket.on('updateMyReactions', (reactions) => renderReactions(reactions));
+        
         socket.on('timerStarted', (endTime) => {
-            if(window.timerInterval) clearInterval(window.timerInterval);
-            window.timerInterval = setInterval(() => {
+            setInterval(() => {
                 const diff = endTime - Date.now();
-                if (diff < 0) { 
-                    document.getElementById('timer-display').innerText = "GIOCO FINITO";
-                    return; 
-                }
+                if (diff < 0) return;
                 const h = Math.floor(diff / 3600000);
                 const m = Math.floor((diff % 3600000) / 60000);
                 const s = Math.floor((diff % 60000) / 1000);
-                document.getElementById('timer-display').innerText = `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+                document.getElementById('timer-display').innerText = h + ":" + (m < 10 ? '0' : '') + m + ":" + (s < 10 ? '0' : '') + s;
             }, 1000);
-        });
-
-        socket.on('sync', (state) => {
-            if (state.active && state.endTime) {
-                // Se il gioco è già in corso quando entro
-                const diff = state.endTime - Date.now();
-                if (diff > 0) {
-                    // Trigger manuale per chi entra a gioco iniziato
-                    socket.emit('timerStarted', state.endTime);
-                }
-            }
         });
     </script>
 </body>
