@@ -6,18 +6,19 @@
     <title>Lumina Live</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --accent: #D4AF37; --primary: #1A237E; --danger: #C62828; }
+        :root { --accent: #D4AF37; --primary: #1A237E; --danger: #C62828; --success: #28a745; }
         body { font-family: -apple-system, sans-serif; margin:0; background: #f0f2f5; color: #222; }
         .header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top:0; z-index: 1000; }
         #map { height: 300px; width: 100%; background: #eee; }
         .content { padding: 15px; max-width: 500px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .btn { border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 10px; font-size: 1rem; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-gold { background: var(--accent); }
         .btn-wa { background: #25D366; }
         .btn-scan { background: #333; }
         .hidden { display: none; }
-        input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        label { font-size: 0.8rem; font-weight: bold; color: #666; display: block; margin-bottom: 5px; text-align: left; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
         #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; overflow-y: auto; }
         #reader { width: 100%; max-width: 400px; }
         .interaction-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 20px; }
@@ -36,7 +37,7 @@
             <p>Inquadra un QR</p>
         </div>
         <div id="interaction-menu" class="hidden" style="width: 100%;">
-            <h3>Invia un messaggio:</h3>
+            <h3 style="text-align:center">Invia a giocatore:</h3>
             <div class="interaction-grid">
                 <button class="btn-int" onclick="sendInteraction('Mi piaci ❤️')">Mi piaci</button>
                 <button class="btn-int" onclick="sendInteraction('Non mi piaci 👎')">Non mi piaci</button>
@@ -61,33 +62,45 @@
 
     <div class="content">
         <div id="admin-setup" class="card hidden">
-            <h3>Pannello Host</h3>
-            <input type="text" id="adm-event-name" placeholder="Nome Evento">
-            <button class="btn btn-gold" id="btn-activate" onclick="activateArea()">1. ATTIVA AREA GIOCO</button>
+            <h3 style="margin-top:0; text-align:center">Pannello Host</h3>
             
-            <div id="admin-join-section" class="hidden" style="margin-top:20px; border-top:1px solid #eee; padding-top:15px;">
-                <p style="font-size:0.9rem">Area Attiva! Ora entra come giocatore:</p>
-                <input type="text" id="adm-nick" placeholder="Tuo Nickname Giocatore">
+            <label>NOME EVENTO</label>
+            <input type="text" id="adm-event-name" placeholder="Es: Aperitivo Lumina">
+            
+            <label>DURATA (MINUTI)</label>
+            <input type="number" id="adm-duration" value="60">
+
+            <label>POSIZIONE EVENTO</label>
+            <button class="btn btn-gold" id="btn-activate-gps" onclick="activateArea('gps')">1A. ATTIVA CON GPS</button>
+            <input type="text" id="adm-address" placeholder="Oppure scrivi indirizzo...">
+            <button class="btn" style="background:var(--primary)" id="btn-activate-addr" onclick="activateArea('addr')">1B. ATTIVA CON INDIRIZZO</button>
+            
+            <div id="admin-join-section" class="hidden" style="margin-top:20px; border-top:2px solid #eee; padding-top:15px; text-align:center;">
+                <p style="font-weight:bold; color:var(--success)">Area Attivata con Successo!</p>
+                <label>IL TUO NICKNAME GIOCATORE</label>
+                <input type="text" id="adm-nick" placeholder="Es: Fabrizio Admin">
                 <button class="btn" style="background:var(--success)" onclick="joinAsAdminPlayer()">2. ENTRA NEL GIOCO</button>
             </div>
         </div>
 
-        <div id="player-reg" class="card">
-            <h3>Benvenuto</h3>
+        <div id="player-reg" class="card" style="text-align:center">
+            <h3>Partecipa</h3>
             <input type="text" id="nickname" placeholder="Tuo Nickname">
             <button class="btn btn-gold" onclick="joinAsPlayer()">ENTRA NEL GIOCO</button>
         </div>
 
         <div id="main-dashboard" class="hidden">
-            <div class="card">
-                <h3 id="user-hello" style="margin:0"></h3>
+            <div class="card" style="text-align:center">
+                <h3 id="user-hello" style="margin:0; color:var(--primary)"></h3>
+                <div id="game-status" style="margin-bottom:15px; font-size:0.9rem; font-weight:bold">Gioco in corso</div>
+                
                 <button class="btn btn-gold" onclick="showMyQR()">IL MIO QR</button>
-                <button class="btn btn-scan" onclick="startScanner()">SCANNERIZZA</button>
+                <button class="btn btn-scan" onclick="startScanner()">SCANNERIZZA GIOCATORE</button>
                 <button class="btn btn-wa" onclick="inviteWA()">INVITA AMICI</button>
                 
                 <div id="admin-powers" class="hidden" style="margin-top:20px; border-top:1px solid #eee; padding-top:10px;">
-                    <button class="btn" style="background:#444" onclick="toggleSetup()">MODIFICA AREA</button>
-                    <button class="btn" style="background:var(--danger)" onclick="resetAll()">RESET SESSIONE</button>
+                    <button class="btn" style="background:#444" onclick="toggleSetup()">MODIFICA AREA/TEMPO</button>
+                    <button class="btn" style="background:var(--danger)" onclick="resetAll()">RESET TOTALE SESSIONE</button>
                 </div>
             </div>
         </div>
@@ -110,16 +123,30 @@
             document.getElementById('player-reg').classList.add('hidden');
         }
 
-        // LOGICA ADMIN
-        function activateArea() {
-            navigator.geolocation.getCurrentPosition(p => {
-                const e = document.getElementById('adm-event-name').value || "Lumina";
-                socket.emit('adminStart', { name: e, value: 60, unit: "min", lat: p.coords.latitude, lng: p.coords.longitude });
-                document.getElementById('admin-join-section').classList.remove('hidden');
-                document.getElementById('btn-activate').style.opacity = "0.5";
-                document.getElementById('btn-activate').innerText = "AREA ATTIVATA";
-                map.setView([p.coords.latitude, p.coords.longitude], 16);
-            });
+        async function activateArea(mode) {
+            const name = document.getElementById('adm-event-name').value || "Lumina";
+            const dur = document.getElementById('adm-duration').value || 60;
+            
+            if(mode === 'gps') {
+                navigator.geolocation.getCurrentPosition(p => {
+                    sendStart(name, dur, p.coords.latitude, p.coords.longitude);
+                });
+            } else {
+                const addr = document.getElementById('adm-address').value;
+                if(!addr) return alert("Inserisci un indirizzo");
+                const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}`);
+                const d = await r.json();
+                if(d.length > 0) sendStart(name, dur, parseFloat(d[0].lat), parseFloat(d[0].lon));
+                else alert("Indirizzo non trovato");
+            }
+        }
+
+        function sendStart(name, dur, lat, lng) {
+            socket.emit('adminStart', { name, value: dur, unit: "min", lat, lng });
+            document.getElementById('admin-join-section').classList.remove('hidden');
+            document.getElementById('btn-activate-gps').style.display = "none";
+            document.getElementById('btn-activate-addr').style.display = "none";
+            map.setView([lat, lng], 16);
         }
 
         function joinAsAdminPlayer() {
@@ -130,7 +157,6 @@
             });
         }
 
-        // LOGICA PLAYER STANDARD
         function joinAsPlayer() {
             navigator.geolocation.getCurrentPosition(p => {
                 const n = document.getElementById('nickname').value || "Player";
@@ -140,7 +166,6 @@
             });
         }
 
-        // SOCIAL & SCANNER
         function showMyQR() {
             document.getElementById('overlay').style.display = 'flex';
             document.getElementById('qr-container').classList.remove('hidden');
@@ -169,7 +194,7 @@
 
         function sendInteraction(type) {
             socket.emit('sendLike', { to: currentTargetId, from: myId, type: type });
-            alert("Inviato!");
+            alert("Interazione Inviata!");
             closeOverlay();
         }
 
@@ -193,14 +218,13 @@
         socket.on('profileCreated', d => {
             myId = d.id;
             document.getElementById('main-dashboard').classList.remove('hidden');
-            document.getElementById('user-hello').innerText = "Ciao, " + d.user.nick;
+            document.getElementById('user-hello').innerText = "In gioco come: " + d.user.nick;
             if(isAdmin) document.getElementById('admin-powers').classList.remove('hidden');
         });
 
         socket.on('updateStats', c => { document.getElementById('user-count').innerText = "Online: " + c; });
         socket.on('timerStarted', d => { 
             document.getElementById('display-title').innerText = d.name;
-            document.getElementById('timer-display').innerText = "Gioco in corso";
         });
         socket.on('updateMap', users => {
             Object.values(users).forEach(u => {
@@ -211,7 +235,7 @@
             });
         });
         function toggleSetup() { document.getElementById('admin-setup').classList.toggle('hidden'); }
-        function resetAll() { if(confirm("RESET?")) socket.emit('adminRequestReset'); }
+        function resetAll() { if(confirm("RESET TOTALE?")) socket.emit('adminRequestReset'); }
         socket.on('gameDeleted', () => location.href = window.location.origin + (isAdmin ? "?admin=1" : ""));
     </script>
 </body>
