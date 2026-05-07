@@ -35,6 +35,27 @@
         .btn { border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 10px; color: white; }
         .btn-gold { background: var(--accent); }
         .hidden { display: none; }
+
+        .admin-field { margin-bottom: 12px; text-align: left; }
+        .admin-field label { display: block; font-size: 0.78rem; font-weight: 700; color: #333; margin-bottom: 5px; }
+        .admin-field input, .admin-field select {
+            width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #ddd;
+            border-radius: 10px; font-size: 0.95rem; background: #fff;
+        }
+        .admin-row { display: grid; grid-template-columns: 1fr 110px; gap: 10px; }
+        .admin-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .btn-light { background:#eef1f7; color:#1A237E; border:1px solid #dce2f0; }
+        .btn-active { outline: 3px solid rgba(212,175,55,0.35); }
+        #address-confirm-box {
+            background:#fff8e1; border:1px solid #f1d37a; border-radius:12px;
+            padding:10px; font-size:0.85rem; margin-bottom:12px; text-align:left;
+        }
+        #game-timer-box {
+            background:#10194f; color:#fff; border-radius:14px; padding:10px 12px;
+            margin: 0 auto 14px auto; max-width:420px; box-shadow:0 4px 14px rgba(0,0,0,0.15);
+        }
+        #game-timer-box .timer-title { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; opacity:0.8; }
+        #game-timer { font-size:1.25rem; font-weight:800; margin-top:2px; }
         
         /* Overlay Interazioni */
         #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:9999; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
@@ -71,8 +92,36 @@
     <div class="content">
         <div id="admin-setup" class="card hidden">
             <h3>Setup Host</h3>
-            <input type="text" id="adm-event-name" placeholder="Nome Evento" style="width:100%; padding:10px; margin-bottom:10px;">
+
+            <div class="admin-field">
+                <label>Nome evento</label>
+                <input type="text" id="adm-event-name" placeholder="Es. Lumina Live Night">
+            </div>
+
+            <div class="admin-field">
+                <label>Durata gioco</label>
+                <div class="admin-row">
+                    <input type="number" id="adm-duration-value" min="1" value="60">
+                    <select id="adm-duration-unit">
+                        <option value="min">minuti</option>
+                        <option value="hour">ore</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="admin-field">
+                <label>Localizzazione evento</label>
+                <div class="admin-choice">
+                    <button class="btn btn-light btn-active" id="btn-loc-gps" onclick="setLocationMode('gps')">Usa la mia posizione</button>
+                    <button class="btn btn-light" id="btn-loc-address" onclick="setLocationMode('address')">Inserisci indirizzo</button>
+                </div>
+                <input type="text" id="adm-address" class="hidden" placeholder="Es. Piazza Duomo, Milano">
+            </div>
+
+            <div id="address-confirm-box" class="hidden"></div>
+
             <button class="btn btn-gold" onclick="activateArea()">ATTIVA AREA GIOCO</button>
+
             <div id="admin-join-section" class="hidden">
                 <input type="text" id="adm-nick" placeholder="Tuo Nickname" style="width:100%; padding:10px; margin-bottom:10px;">
                 <button class="btn" style="background:#28a745" onclick="joinGame('admin')">ENTRA NEL GIOCO</button>
@@ -119,21 +168,152 @@
         const socket = io();
         let myId, markers = {}, html5QrCode, currentTargetId;
         let interactionsReceived = [];
+        let locationMode = 'gps';
+        let confirmedAddressLocation = null;
+        let timerInterval = null;
+        let currentGameEndTime = null;
 
         const map = L.map('map', { zoomControl: false }).setView([45.4642, 9.19], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        function startGameTimer(endTime) {
+            currentGameEndTime = endTime;
+            const box = document.getElementById('game-timer-box');
+            const timer = document.getElementById('game-timer');
+            if (!endTime) {
+                box.classList.add('hidden');
+                return;
+            }
+
+            box.classList.remove('hidden');
+
+            if (timerInterval) clearInterval(timerInterval);
+
+            function renderTimer() {
+                const remaining = Math.max(0, endTime - Date.now());
+                const totalSeconds = Math.floor(remaining / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+
+                if (hours > 0) {
+                    timer.innerText = `${hours}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+                } else {
+                    timer.innerText = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                }
+
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    timer.innerText = "Tempo scaduto";
+                }
+            }
+
+            renderTimer();
+            timerInterval = setInterval(renderTimer, 1000);
+        }
+
+        socket.on('sync', state => {
+            if (state && state.name) {
+                document.getElementById('display-title').innerText = state.name;
+            }
+            if (state && state.endTime) {
+                startGameTimer(state.endTime);
+            }
+            if (state && state.center) {
+                map.setView([state.center.lat, state.center.lng], 15);
+            }
+        });
+
+        socket.on('timerStarted', d => {
+            if (d && d.name) document.getElementById('display-title').innerText = d.name;
+            if (d && d.endTime) startGameTimer(d.endTime);
+            if (d && d.center) map.setView([d.center.lat, d.center.lng], 15);
+        });
 
         if (window.location.search.includes('admin')) {
             document.getElementById('admin-setup').classList.remove('hidden');
             document.getElementById('player-reg').classList.add('hidden');
         }
 
-        function activateArea() {
-            navigator.geolocation.getCurrentPosition(p => {
-                const name = document.getElementById('adm-event-name').value || "Lumina";
-                socket.emit('adminStart', { name, value: 60, unit: "min", lat: p.coords.latitude, lng: p.coords.longitude });
+        function setLocationMode(mode) {
+            locationMode = mode;
+            confirmedAddressLocation = null;
+            document.getElementById('adm-address').classList.toggle('hidden', mode !== 'address');
+            document.getElementById('address-confirm-box').classList.add('hidden');
+            document.getElementById('btn-loc-gps').classList.toggle('btn-active', mode === 'gps');
+            document.getElementById('btn-loc-address').classList.toggle('btn-active', mode === 'address');
+        }
+
+        async function geocodeAddress(address) {
+            const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(address);
+            const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            const data = await res.json();
+            if (!data || !data.length) throw new Error('Indirizzo non trovato.');
+            return {
+                lat: parseFloat(data[0].lat),
+                lng: parseFloat(data[0].lon),
+                label: data[0].display_name
+            };
+        }
+
+        function getDurationSettings() {
+            const value = parseInt(document.getElementById('adm-duration-value').value, 10) || 60;
+            const unit = document.getElementById('adm-duration-unit').value || 'min';
+            return { value: Math.max(1, value), unit };
+        }
+
+        async function activateArea() {
+            const name = document.getElementById('adm-event-name').value.trim() || "Lumina";
+            const duration = getDurationSettings();
+
+            if (locationMode === 'gps') {
+                navigator.geolocation.getCurrentPosition(p => {
+                    socket.emit('adminStart', {
+                        name,
+                        value: duration.value,
+                        unit: duration.unit,
+                        lat: p.coords.latitude,
+                        lng: p.coords.longitude
+                    });
+                    document.getElementById('admin-join-section').classList.remove('hidden');
+                }, () => {
+                    alert("Non riesco a leggere la tua posizione. Puoi usare l'indirizzo manuale.");
+                });
+                return;
+            }
+
+            const address = document.getElementById('adm-address').value.trim();
+            if (!address) {
+                alert("Inserisci un indirizzo prima di attivare l'area gioco.");
+                return;
+            }
+
+            try {
+                const found = await geocodeAddress(address);
+                const box = document.getElementById('address-confirm-box');
+
+                if (!confirmedAddressLocation || confirmedAddressLocation.label !== found.label) {
+                    confirmedAddressLocation = found;
+                    box.innerHTML = `
+                        <strong>Confermi questo indirizzo?</strong><br>
+                        ${found.label}<br><br>
+                        <button class="btn btn-gold" onclick="activateArea()">CONFERMA E ATTIVA</button>
+                    `;
+                    box.classList.remove('hidden');
+                    return;
+                }
+
+                socket.emit('adminStart', {
+                    name,
+                    value: duration.value,
+                    unit: duration.unit,
+                    lat: confirmedAddressLocation.lat,
+                    lng: confirmedAddressLocation.lng
+                });
                 document.getElementById('admin-join-section').classList.remove('hidden');
-            });
+            } catch (e) {
+                alert(e.message || "Errore nella ricerca dell'indirizzo.");
+            }
         }
 
         function joinGame(type) {
@@ -149,6 +329,7 @@
             myId = d.id;
             document.getElementById('main-dashboard').classList.remove('hidden');
             document.getElementById('user-hello').innerText = d.user.nick;
+            if (currentGameEndTime) startGameTimer(currentGameEndTime);
             if(window.location.search.includes('admin')) document.getElementById('admin-powers').classList.remove('hidden');
             QRCode.toCanvas(document.getElementById('qr-canvas'), window.location.origin + "/?target=" + myId);
         });

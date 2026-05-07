@@ -11,6 +11,7 @@ app.use(express.static(__dirname));
 let gameState = {
     name: "Viral Zone",
     center: null,
+    startedAt: null,
     endTime: null,
     active: false,
     users: {}
@@ -21,11 +22,17 @@ io.on('connection', (socket) => {
     
     socket.on('adminStart', (data) => {
         let durationMs = data.unit === 'min' ? data.value * 60000 : data.value * 3600000;
-        gameState.endTime = Date.now() + durationMs;
+        gameState.startedAt = Date.now();
+        gameState.endTime = gameState.startedAt + durationMs;
         gameState.active = true;
         gameState.name = data.name;
         gameState.center = { lat: data.lat, lng: data.lng };
-        io.emit('timerStarted', { endTime: gameState.endTime, name: data.name, center: gameState.center });
+        io.emit('timerStarted', {
+            startedAt: gameState.startedAt,
+            endTime: gameState.endTime,
+            name: data.name,
+            center: gameState.center
+        });
     });
 
     socket.on('registerUser', (userData) => {
@@ -65,7 +72,10 @@ io.on('connection', (socket) => {
     socket.on('adminRequestReset', () => {
         gameState.users = {};
         gameState.active = false;
+        gameState.startedAt = null;
         gameState.endTime = null;
+        gameState.center = null;
+        gameState.name = "Viral Zone";
         io.emit('gameDeleted');
     });
 
