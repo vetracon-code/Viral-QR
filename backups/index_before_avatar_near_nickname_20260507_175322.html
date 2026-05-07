@@ -1007,66 +1007,6 @@
       display: block;
     }
 
-  
-    .profile-identity {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      margin-bottom: 8px;
-    }
-
-    .profile-avatar {
-      width: 58px;
-      height: 58px;
-      border-radius: 999px;
-      overflow: hidden;
-      border: 3px solid #D4AF37;
-      background: white;
-      box-shadow: 0 4px 14px rgba(0,0,0,.16);
-      flex: 0 0 auto;
-    }
-
-    .profile-avatar svg {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    .profile-name-block {
-      text-align: left;
-      min-width: 0;
-    }
-
-    .profile-name-label {
-      font-size: .68rem;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      color: #6b7280;
-      font-weight: 900;
-      margin-bottom: 2px;
-    }
-
-    #user-hello {
-      margin: 0;
-      color: #1A237E;
-      font-size: 1.12rem;
-      line-height: 1.15;
-      font-weight: 950;
-      word-break: break-word;
-    }
-
-    @media (max-width: 420px) {
-      .profile-identity {
-        justify-content: flex-start;
-      }
-
-      .profile-avatar {
-        width: 52px;
-        height: 52px;
-      }
-    }
-
   </style>
 </head>
 
@@ -1420,13 +1360,7 @@
       </div>
 
       <div class="player-profile">
-        <div class="profile-identity">
-          <div id="profile-avatar" class="profile-avatar"></div>
-          <div class="profile-name-block">
-            <div class="profile-name-label">Nel gioco come</div>
-            <h3 id="user-hello"></h3>
-          </div>
-        </div>
+        <h3 id="user-hello" style="margin:0;"></h3>
         <div id="duo-status" class="duo-status"></div>
 
         <div class="presence-title">La tua presenza</div>
@@ -2554,11 +2488,6 @@
 
       document.getElementById('main-dashboard').classList.remove('hidden');
       document.getElementById('user-hello').innerText = d.user.nick;
-
-      const profileAvatar = document.getElementById('profile-avatar');
-      if (profileAvatar) {
-        profileAvatar.innerHTML = renderAvatarSvg(d.user.avatar || { anon: true });
-      }
 
       if (d.game && d.game.center) {
         currentGameCenter = d.game.center;
