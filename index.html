@@ -203,8 +203,9 @@
         let timerInterval = null;
         let currentGameEndTime = null;
 
-        const map = L.map('map', { zoomControl: false }).setView([45.4642, 9.19], 13);
+        const map = L.map('map', { zoomControl: true }).setView([45.4642, 9.19], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        map.zoomControl.setPosition('bottomright');
 
         function startGameTimer(endTime) {
             currentGameEndTime = endTime;
