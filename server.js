@@ -24,19 +24,24 @@ function resetGame() {
 
 io.on('connection', (socket) => {
     socket.emit('sync', gameState);
+    
     socket.on('adminStart', (data) => {
-        let durationMs = data.unit === 'min' ? data.value * 60000 : data.unit === 'ore' ? data.value * 3600000 : data.value * 86400000;
+        let durationMs = data.unit === 'min' ? data.value * 60000 : data.value * 3600000;
         gameState.endTime = Date.now() + durationMs;
         gameState.active = true;
         gameState.name = data.name;
         io.emit('timerStarted', { endTime: gameState.endTime, name: data.name });
-        setTimeout(resetGame, durationMs);
     });
+
+    socket.on('adminRequestReset', () => {
+        resetGame(); // Reset immediato su richiesta
+    });
+
     socket.on('registerUser', (userData) => {
-        gameState.users[socket.id] = { id: socket.id, nick: userData.nick || "Anonimo", lat: userData.lat, lng: userData.lng };
+        gameState.users[socket.id] = { id: socket.id, nick: userData.nick, lat: userData.lat, lng: userData.lng };
         socket.emit('profileCreated', { id: socket.id, user: gameState.users[socket.id] });
     });
 });
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => console.log('Server Pronto'));
+server.listen(PORT, () => console.log('Server con Reset Admin Pronto'));
