@@ -28,7 +28,7 @@
     <div class="header">
         <div id="user-count" class="stats">Online: 0</div>
         <h2 id="display-title" style="margin:0; font-size: 1.2rem;">LUMINA</h2>
-        <div id="timer-display" style="color:var(--accent); font-size: 0.9rem;">Configurazione Host...</div>
+        <div id="timer-display" style="color:var(--accent); font-size: 0.9rem;">Pronto per iniziare</div>
     </div>
 
     <div id="map"></div>
@@ -38,22 +38,16 @@
             <h3 style="margin-top:0">Pannello Host</h3>
             <label style="font-size: 0.8rem; font-weight: bold;">NOME EVENTO</label>
             <input type="text" id="adm-event-name" placeholder="Es: Festa in Giardino">
-            
             <label style="font-size: 0.8rem; font-weight: bold;">IL TUO NICKNAME DA GIOCATORE</label>
             <input type="text" id="adm-nick" placeholder="Inserisci il tuo nome nel gioco">
-            
             <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-            <p style="font-size: 0.8rem; color: #666;">Imposta il centro del gioco:</p>
-            
             <button class="btn" style="background:#28a745" onclick="setupGPS()">USA MIA POSIZIONE E INIZIA</button>
-            
             <input type="text" id="adm-address" placeholder="Oppure inserisci un indirizzo">
             <button class="btn" style="background:var(--primary)" onclick="setupAddr()">USA INDIRIZZO E INIZIA</button>
         </div>
 
         <div id="player-reg" class="card">
             <h3>Benvenuto</h3>
-            <p>Inserisci il tuo nome per partecipare alla sessione attiva.</p>
             <input type="text" id="nickname" placeholder="Tuo Nickname">
             <button class="btn" onclick="joinAsPlayer()">ENTRA NEL GIOCO</button>
         </div>
@@ -62,9 +56,7 @@
             <div class="card">
                 <h3 id="user-hello" style="margin-top:0; color:var(--primary);"></h3>
                 <button class="btn" onclick="showQR()">MOSTRA IL MIO QR</button>
-                
                 <div id="admin-powers" class="hidden" style="margin-top:20px; border-top:2px solid #eee; padding-top:15px;">
-                    <p style="font-size: 0.7rem; color:red; font-weight:bold;">CONTROLLI HOST:</p>
                     <button class="btn" style="background:#444" onclick="toggleSetup()">MODIFICA EVENTO / AREA</button>
                     <button class="btn" style="background:var(--danger)" onclick="resetAll()">RESET TOTALE SESSIONE</button>
                 </div>
@@ -79,7 +71,6 @@
         const socket = io();
         let map, isAdmin = false, myId = "", markers = {};
 
-        // Inizializzazione Mappa
         map = L.map('map', { zoomControl: false }).setView([45.4642, 9.1900], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
@@ -90,9 +81,7 @@
         }
 
         function setupGPS() {
-            navigator.geolocation.getCurrentPosition(p => {
-                completeSetup(p.coords.latitude, p.coords.longitude);
-            }, () => alert("Errore GPS. Controlla i permessi."));
+            navigator.geolocation.getCurrentPosition(p => completeSetup(p.coords.latitude, p.coords.longitude), () => alert("Errore GPS"));
         }
 
         async function setupAddr() {
@@ -107,10 +96,8 @@
         function completeSetup(lat, lng) {
             const eventName = document.getElementById('adm-event-name').value || "Lumina";
             const hostNick = document.getElementById('adm-nick').value || "Host";
-            
             socket.emit('adminStart', { name: eventName, value: 60, unit: "min", lat, lng });
             socket.emit('registerUser', { nick: hostNick, lat, lng });
-            
             document.getElementById('admin-setup').classList.add('hidden');
             map.setView([lat, lng], 16);
         }
@@ -121,7 +108,7 @@
                 socket.emit('registerUser', { nick, lat: p.coords.latitude, lng: p.coords.longitude });
                 document.getElementById('player-reg').classList.add('hidden');
                 map.setView([p.coords.latitude, p.coords.longitude], 16);
-            }, () => alert("Attiva il GPS per giocare"));
+            }, () => alert("Attiva il GPS"));
         }
 
         socket.on('profileCreated', d => {
@@ -131,25 +118,20 @@
             if(isAdmin) document.getElementById('admin-powers').classList.remove('hidden');
         });
 
-        socket.on('updateStats', count => {
-            document.getElementById('user-count').innerText = "Online: " + count;
-        });
+        socket.on('updateStats', count => { document.getElementById('user-count').innerText = "Online: " + count; });
 
         socket.on('updateMap', users => {
             Object.values(users).forEach(u => {
                 if(u.id !== socket.id) {
-                    if(markers[u.id]) {
-                        markers[u.id].setLatLng([u.lat, u.lng]);
-                    } else {
-                        markers[u.id] = L.marker([u.lat, u.lng]).addTo(map).bindPopup(u.nick);
-                    }
+                    if(markers[u.id]) markers[u.id].setLatLng([u.lat, u.lng]);
+                    else markers[u.id] = L.marker([u.lat, u.lng]).addTo(map).bindPopup(u.nick);
                 }
             });
         });
 
         socket.on('timerStarted', d => {
             document.getElementById('display-title').innerText = d.name;
-            document.getElementById('timer-display').innerText = "Sessione Attiva";
+            document.getElementById('timer-display').innerText = "Gioco in corso";
         });
 
         function showQR() {
@@ -157,14 +139,10 @@
             document.getElementById('qr-overlay').style.display = "flex";
         }
 
-        function toggleSetup() {
-            document.getElementById('admin-setup').classList.toggle('hidden');
-        }
+        function toggleSetup() { document.getElementById('admin-setup').classList.toggle('hidden'); }
 
         function resetAll() {
-            if(confirm("RESET TOTALE: Questa azione espellerà tutti i giocatori. Continuare?")) {
-                socket.emit('adminRequestReset');
-            }
+            if(confirm("RESET TOTALE SESSIONE?")) socket.emit('adminRequestReset');
         }
 
         socket.on('gameDeleted', () => {
