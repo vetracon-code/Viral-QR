@@ -29,6 +29,22 @@
       text-align: center;
     }
 
+    .header {
+      background: var(--primary);
+      color: white;
+      padding: 12px 10px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 3px 16px rgba(0,0,0,.18);
+    }
+
+    .header h2 {
+      margin: 0;
+      font-size: 1.08rem;
+      letter-spacing: .04em;
+    }
+
     .content {
       padding: 15px;
       max-width: 760px;
@@ -769,110 +785,6 @@
       margin-top: 7px;
     }
 
-  
-    .header {
-      background: linear-gradient(135deg, #10194f 0%, #1A237E 55%, #2B2F8F 100%);
-      color: white;
-      padding: 10px 10px 12px 10px;
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      box-shadow: 0 4px 18px rgba(0,0,0,.22);
-    }
-
-    .live-kicker {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      background: rgba(212,175,55,.18);
-      border: 1px solid rgba(212,175,55,.45);
-      color: #F8E7A1;
-      border-radius: 999px;
-      padding: 4px 9px;
-      font-size: .68rem;
-      font-weight: 950;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-
-    .live-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 999px;
-      background: #D4AF37;
-      box-shadow: 0 0 0 0 rgba(212,175,55,.75);
-      animation: livePulse 1.3s infinite;
-    }
-
-    @keyframes livePulse {
-      0% { box-shadow: 0 0 0 0 rgba(212,175,55,.75); }
-      70% { box-shadow: 0 0 0 8px rgba(212,175,55,0); }
-      100% { box-shadow: 0 0 0 0 rgba(212,175,55,0); }
-    }
-
-    #display-title {
-      margin: 0;
-      font-size: 1.02rem;
-      line-height: 1.16;
-      letter-spacing: .035em;
-      font-weight: 950;
-      text-transform: uppercase;
-    }
-
-    .header-countdown {
-      margin: 7px auto 0 auto;
-      max-width: 420px;
-      background: rgba(255,255,255,.10);
-      border: 1px solid rgba(255,255,255,.16);
-      border-radius: 15px;
-      padding: 8px 10px;
-    }
-
-    .header-countdown-label {
-      font-size: .68rem;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      font-weight: 900;
-      opacity: .82;
-      margin-bottom: 2px;
-    }
-
-    #header-countdown-time {
-      font-size: 1.55rem;
-      line-height: 1.1;
-      font-weight: 1000;
-      letter-spacing: .03em;
-      color: #F8E7A1;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .header-countdown-sub {
-      margin-top: 2px;
-      font-size: .73rem;
-      opacity: .82;
-      font-weight: 750;
-    }
-
-    .header-countdown.expired #header-countdown-time {
-      color: #ffb4b4;
-    }
-
-    #game-timer-box {
-      display: none !important;
-    }
-
-    @media (min-width: 800px) {
-      #display-title {
-        font-size: 1.18rem;
-      }
-
-      #header-countdown-time {
-        font-size: 1.85rem;
-      }
-    }
-
   </style>
 </head>
 
@@ -940,13 +852,7 @@
   </div>
 
   <div class="header">
-    <div class="live-kicker"><span class="live-dot"></span> Gioco a tempo</div>
     <h2 id="display-title">LUMINA LIVE</h2>
-    <div id="header-countdown-box" class="header-countdown hidden">
-      <div class="header-countdown-label">Tempo alla scadenza</div>
-      <div id="header-countdown-time">--:--</div>
-      <div class="header-countdown-sub">Quando il tempo finisce, la sessione si chiude.</div>
-    </div>
   </div>
 
   <div class="content">
@@ -1437,22 +1343,15 @@
     function startGameTimer(endTime) {
       currentGameEndTime = endTime;
 
-      const oldBox = document.getElementById('game-timer-box');
-      const oldTimer = document.getElementById('game-timer');
-      const headerBox = document.getElementById('header-countdown-box');
-      const headerTimer = document.getElementById('header-countdown-time');
+      const box = document.getElementById('game-timer-box');
+      const timer = document.getElementById('game-timer');
 
       if (!endTime) {
-        if (oldBox) oldBox.classList.add('hidden');
-        if (headerBox) headerBox.classList.add('hidden');
+        box.classList.add('hidden');
         return;
       }
 
-      if (oldBox) oldBox.classList.add('hidden');
-      if (headerBox) {
-        headerBox.classList.remove('hidden');
-        headerBox.classList.remove('expired');
-      }
+      box.classList.remove('hidden');
 
       if (timerInterval) clearInterval(timerInterval);
 
@@ -1463,21 +1362,15 @@
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = totalSeconds % 60;
 
-        let value;
         if (hours > 0) {
-          value = `${hours}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+          timer.innerText = `${hours}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
         } else {
-          value = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+          timer.innerText = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         }
-
-        if (headerTimer) headerTimer.innerText = value;
-        if (oldTimer) oldTimer.innerText = value;
 
         if (remaining <= 0) {
           clearInterval(timerInterval);
-          if (headerTimer) headerTimer.innerText = 'Tempo scaduto';
-          if (oldTimer) oldTimer.innerText = 'Tempo scaduto';
-          if (headerBox) headerBox.classList.add('expired');
+          timer.innerText = 'Tempo scaduto';
         }
       }
 
@@ -1487,7 +1380,7 @@
 
     socket.on('sync', state => {
       if (state && state.name) {
-        document.getElementById('display-title').innerText = state.name || 'Lumina Live';
+        document.getElementById('display-title').innerText = state.name;
       }
 
       if (state && state.radiusMeters) {
@@ -1506,7 +1399,7 @@
 
     socket.on('timerStarted', d => {
       if (d && d.name) {
-        document.getElementById('display-title').innerText = d.name || 'Lumina Live';
+        document.getElementById('display-title').innerText = d.name;
       }
 
       if (d && d.radiusMeters) {
