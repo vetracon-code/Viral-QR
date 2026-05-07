@@ -873,76 +873,6 @@
       }
     }
 
-  
-    .lumina-brand-hero {
-      max-width: 520px;
-      margin: 14px auto 16px auto;
-      border-radius: 22px;
-      overflow: hidden;
-      box-shadow: 0 8px 28px rgba(0,0,0,.24);
-      background: #10194f;
-      border: 1px solid rgba(212,175,55,.35);
-    }
-
-    .lumina-brand-hero img {
-      width: 100%;
-      display: block;
-    }
-
-    .lumina-brand-mini {
-      width: 54px;
-      height: 54px;
-      border-radius: 16px;
-      overflow: hidden;
-      margin: 0 auto 8px auto;
-      box-shadow: 0 4px 16px rgba(0,0,0,.22);
-      border: 1px solid rgba(212,175,55,.35);
-    }
-
-    .lumina-brand-mini img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .header {
-      background:
-        radial-gradient(circle at top center, rgba(212,175,55,.24), transparent 38%),
-        linear-gradient(135deg, #070B24 0%, #10194F 48%, #221552 100%);
-    }
-
-    body {
-      background:
-        radial-gradient(circle at top center, rgba(124,58,237,.12), transparent 320px),
-        #f0f2f5;
-    }
-
-    .card,
-    .player-profile {
-      border: 1px solid rgba(26,35,126,.08);
-    }
-
-    .btn-gold {
-      background: linear-gradient(135deg, #D4AF37 0%, #F2D675 100%);
-      color: #111827;
-    }
-
-    .btn-light {
-      background: #f6f7fc;
-    }
-
-    .live-kicker {
-      background: rgba(212,175,55,.18);
-      border-color: rgba(212,175,55,.45);
-      color: #F8E7A1;
-    }
-
-    #header-countdown-time {
-      color: #F8E7A1;
-      text-shadow: 0 0 12px rgba(212,175,55,.28);
-    }
-
   </style>
 </head>
 
@@ -1010,9 +940,6 @@
   </div>
 
   <div class="header">
-    <div class="lumina-brand-mini">
-      <img src="/images/lumina/lumina-live-icon.png" alt="Lumina Live">
-    </div>
     <div class="live-kicker"><span class="live-dot"></span> Gioco a tempo</div>
     <h2 id="display-title">LUMINA LIVE</h2>
     <div id="header-countdown-box" class="header-countdown hidden">
@@ -1024,9 +951,6 @@
 
   <div class="content">
     <div id="admin-setup" class="card hidden">
-      <div class="lumina-brand-hero">
-        <img src="/images/lumina/lumina-live-banner.png" alt="Lumina Live">
-      </div>
       <h3>Setup Host</h3>
 
       <div class="admin-field">
@@ -1167,9 +1091,6 @@
     </div>
 
     <div id="player-reg" class="card">
-      <div class="lumina-brand-hero">
-        <img src="/images/lumina/lumina-live-poster.png" alt="Lumina Live">
-      </div>
       <h3 id="player-reg-title">Benvenuto</h3>
       <p id="player-reg-subtitle" style="margin-top:-4px; color:#444; font-size:.92rem; line-height:1.35;"></p>
       <input type="text" id="nickname" placeholder="Tuo Nickname" oninput="handlePlayerNickInput()" style="width:100%; padding:13px; margin-bottom:12px; border-radius:12px; border:1px solid #ddd;">
