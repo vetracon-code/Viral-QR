@@ -6,38 +6,48 @@
     <title>Lumina Live</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --accent: #D4AF37; --primary: #1A237E; --danger: #C62828; --success: #28a745; }
-        body { font-family: -apple-system, sans-serif; margin:0; background: #f0f2f5; color: #222; }
-        .header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top:0; z-index: 1000; }
-        #map { height: 300px; width: 100%; background: #eee; }
-        .content { padding: 15px; max-width: 500px; margin: auto; }
+        :root { --accent: #D4AF37; --primary: #1A237E; --danger: #C62828; --bg: #f0f2f5; }
+        body { font-family: -apple-system, sans-serif; margin:0; background: var(--bg); color: #222; text-align: center; }
+        .header { background: var(--primary); color: white; padding: 10px; position: sticky; top:0; z-index: 1000; }
+        
+        /* Dashboard Layout */
+        .player-profile { padding: 20px; background: white; border-bottom: 3px solid var(--accent); }
+        .qr-wrapper { position: relative; display: inline-block; margin: 20px 0; background: white; padding: 10px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        #qr-canvas { width: 180px !important; height: 180px !important; }
+        
+        /* Like Stats attorno al QR */
+        .stat-badge { position: absolute; background: white; border: 1px solid #ddd; border-radius: 50px; padding: 5px 12px; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .s-tl { top: -10px; left: -30px; }
+        .s-tr { top: -10px; right: -30px; }
+        .s-bl { bottom: -10px; left: -30px; }
+        .s-br { bottom: -10px; right: -30px; }
+
+        /* Liste Notifiche */
+        #notif-list { max-width: 400px; margin: 10px auto; background: #fff; border-radius: 10px; text-align: left; max-height: 200px; overflow-y: auto; }
+        .notif-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .btn-reply { background: var(--accent); color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 0.7rem; cursor: pointer; }
+
+        #map { height: 250px; width: 100%; margin-top: 20px; }
+        .content { padding: 15px; }
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .btn { border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 10px; font-size: 1rem; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn { border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 10px; color: white; }
         .btn-gold { background: var(--accent); }
-        .btn-wa { background: #25D366; }
-        .btn-scan { background: #333; }
         .hidden { display: none; }
-        label { font-size: 0.8rem; font-weight: bold; color: #666; display: block; margin-bottom: 5px; text-align: left; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
-        #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; overflow-y: auto; }
-        #reader { width: 100%; max-width: 400px; }
-        .interaction-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 20px; }
+        
+        /* Overlay Interazioni */
+        #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:9999; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
+        .interaction-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
         .btn-int { padding: 12px; border-radius: 10px; border: 1px solid #ddd; background: #f8f9fa; font-size: 0.85rem; cursor: pointer; }
-        .like-popup { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: white; color: var(--primary); padding: 15px 20px; border-radius: 15px; font-weight: bold; z-index: 10001; box-shadow: 0 5px 20px rgba(0,0,0,0.3); border-left: 5px solid var(--accent); width: 80%; text-align: center; }
     </style>
 </head>
 <body>
+
     <div id="overlay">
-        <div id="qr-container" class="hidden">
-            <canvas id="qr-canvas"></canvas>
-            <p>Fatti scannerizzare!</p>
-        </div>
         <div id="scanner-container" class="hidden">
-            <div id="reader"></div>
-            <p>Inquadra un QR</p>
+            <div id="reader" style="width:300px"></div>
         </div>
-        <div id="interaction-menu" class="hidden" style="width: 100%;">
-            <h3 style="text-align:center">Invia a giocatore:</h3>
+        <div id="interaction-menu" style="width: 100%;">
+            <h3 id="reply-to-label">Invia a:</h3>
             <div class="interaction-grid">
                 <button class="btn-int" onclick="sendInteraction('Mi piaci ❤️')">Mi piaci</button>
                 <button class="btn-int" onclick="sendInteraction('Non mi piaci 👎')">Non mi piaci</button>
@@ -53,56 +63,47 @@
     </div>
 
     <div class="header">
-        <div id="user-count" style="position:absolute; right:10px; font-size:0.7rem">Online: 0</div>
-        <h2 id="display-title" style="margin:0">LUMINA</h2>
-        <div id="timer-display" style="color:var(--accent); font-size:0.8rem">Pronto</div>
+        <h2 id="display-title" style="margin:0; font-size: 1.1rem;">LUMINA</h2>
     </div>
-
-    <div id="map"></div>
 
     <div class="content">
         <div id="admin-setup" class="card hidden">
-            <h3 style="margin-top:0; text-align:center">Pannello Host</h3>
-            
-            <label>NOME EVENTO</label>
-            <input type="text" id="adm-event-name" placeholder="Es: Aperitivo Lumina">
-            
-            <label>DURATA (MINUTI)</label>
-            <input type="number" id="adm-duration" value="60">
-
-            <label>POSIZIONE EVENTO</label>
-            <button class="btn btn-gold" id="btn-activate-gps" onclick="activateArea('gps')">1A. ATTIVA CON GPS</button>
-            <input type="text" id="adm-address" placeholder="Oppure scrivi indirizzo...">
-            <button class="btn" style="background:var(--primary)" id="btn-activate-addr" onclick="activateArea('addr')">1B. ATTIVA CON INDIRIZZO</button>
-            
-            <div id="admin-join-section" class="hidden" style="margin-top:20px; border-top:2px solid #eee; padding-top:15px; text-align:center;">
-                <p style="font-weight:bold; color:var(--success)">Area Attivata con Successo!</p>
-                <label>IL TUO NICKNAME GIOCATORE</label>
-                <input type="text" id="adm-nick" placeholder="Es: Fabrizio Admin">
-                <button class="btn" style="background:var(--success)" onclick="joinAsAdminPlayer()">2. ENTRA NEL GIOCO</button>
+            <h3>Setup Host</h3>
+            <input type="text" id="adm-event-name" placeholder="Nome Evento" style="width:100%; padding:10px; margin-bottom:10px;">
+            <button class="btn btn-gold" onclick="activateArea()">ATTIVA AREA GIOCO</button>
+            <div id="admin-join-section" class="hidden">
+                <input type="text" id="adm-nick" placeholder="Tuo Nickname" style="width:100%; padding:10px; margin-bottom:10px;">
+                <button class="btn" style="background:#28a745" onclick="joinGame('admin')">ENTRA NEL GIOCO</button>
             </div>
         </div>
 
-        <div id="player-reg" class="card" style="text-align:center">
-            <h3>Partecipa</h3>
-            <input type="text" id="nickname" placeholder="Tuo Nickname">
-            <button class="btn btn-gold" onclick="joinAsPlayer()">ENTRA NEL GIOCO</button>
+        <div id="player-reg" class="card">
+            <h3>Benvenuto</h3>
+            <input type="text" id="nickname" placeholder="Tuo Nickname" style="width:100%; padding:10px; margin-bottom:10px;">
+            <button class="btn btn-gold" onclick="joinGame('player')">ENTRA NEL GIOCO</button>
         </div>
 
         <div id="main-dashboard" class="hidden">
-            <div class="card" style="text-align:center">
-                <h3 id="user-hello" style="margin:0; color:var(--primary)"></h3>
-                <div id="game-status" style="margin-bottom:15px; font-size:0.9rem; font-weight:bold">Gioco in corso</div>
+            <div class="player-profile">
+                <h3 id="user-hello" style="margin:0"></h3>
                 
-                <button class="btn btn-gold" onclick="showMyQR()">IL MIO QR</button>
-                <button class="btn btn-scan" onclick="startScanner()">SCANNERIZZA GIOCATORE</button>
-                <button class="btn btn-wa" onclick="inviteWA()">INVITA AMICI</button>
+                <div class="qr-wrapper">
+                    <canvas id="qr-canvas"></canvas>
+                    <div class="stat-badge s-tl" onclick="showLikers('Mi piaci ❤️')">❤️ <span id="count-like">0</span></div>
+                    <div class="stat-badge s-tr" onclick="showLikers('Prendiamo un caffè? ☕')">☕ <span id="count-coffee">0</span></div>
+                    <div class="stat-badge s-bl" onclick="showLikers('Brindiamo! 🥂')">🥂 <span id="count-cheers">0</span></div>
+                    <div class="stat-badge s-br" onclick="showLikers('Applauso 👏')">👏 <span id="count-clap">0</span></div>
+                </div>
+
+                <div id="notif-list" class="hidden"></div>
                 
-                <div id="admin-powers" class="hidden" style="margin-top:20px; border-top:1px solid #eee; padding-top:10px;">
-                    <button class="btn" style="background:#444" onclick="toggleSetup()">MODIFICA AREA/TEMPO</button>
-                    <button class="btn" style="background:var(--danger)" onclick="resetAll()">RESET TOTALE SESSIONE</button>
+                <button class="btn btn-gold" onclick="startScanner()" style="margin-top:10px;">SCANNERIZZA QUALCUNO</button>
+                <div id="admin-powers" class="hidden">
+                    <button class="btn" style="background:var(--danger); font-size:0.8rem; padding:8px" onclick="resetAll()">RESET SESSIONE</button>
                 </div>
             </div>
+
+            <div id="map"></div>
         </div>
     </div>
 
@@ -112,102 +113,89 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const socket = io();
-        let map, isAdmin = false, myId = "", markers = {}, html5QrCode, currentTargetId = "";
+        let myId, markers = {}, html5QrCode, currentTargetId;
+        let interactionsReceived = [];
 
-        map = L.map('map', { zoomControl: false }).setView([45.4642, 9.19], 13);
+        const map = L.map('map', { zoomControl: false }).setView([45.4642, 9.19], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         if (window.location.search.includes('admin')) {
-            isAdmin = true;
             document.getElementById('admin-setup').classList.remove('hidden');
             document.getElementById('player-reg').classList.add('hidden');
         }
 
-        async function activateArea(mode) {
-            const name = document.getElementById('adm-event-name').value || "Lumina";
-            const dur = document.getElementById('adm-duration').value || 60;
-            
-            if(mode === 'gps') {
-                navigator.geolocation.getCurrentPosition(p => {
-                    sendStart(name, dur, p.coords.latitude, p.coords.longitude);
-                });
-            } else {
-                const addr = document.getElementById('adm-address').value;
-                if(!addr) return alert("Inserisci un indirizzo");
-                const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}`);
-                const d = await r.json();
-                if(d.length > 0) sendStart(name, dur, parseFloat(d[0].lat), parseFloat(d[0].lon));
-                else alert("Indirizzo non trovato");
-            }
-        }
-
-        function sendStart(name, dur, lat, lng) {
-            socket.emit('adminStart', { name, value: dur, unit: "min", lat, lng });
-            document.getElementById('admin-join-section').classList.remove('hidden');
-            document.getElementById('btn-activate-gps').style.display = "none";
-            document.getElementById('btn-activate-addr').style.display = "none";
-            map.setView([lat, lng], 16);
-        }
-
-        function joinAsAdminPlayer() {
-            const n = document.getElementById('adm-nick').value || "Host";
+        function activateArea() {
             navigator.geolocation.getCurrentPosition(p => {
-                socket.emit('registerUser', { nick: n, lat: p.coords.latitude, lng: p.coords.longitude });
-                document.getElementById('admin-setup').classList.add('hidden');
+                const name = document.getElementById('adm-event-name').value || "Lumina";
+                socket.emit('adminStart', { name, value: 60, unit: "min", lat: p.coords.latitude, lng: p.coords.longitude });
+                document.getElementById('admin-join-section').classList.remove('hidden');
             });
         }
 
-        function joinAsPlayer() {
+        function joinGame(type) {
+            const nick = document.getElementById(type === 'admin' ? 'adm-nick' : 'nickname').value || "Player";
             navigator.geolocation.getCurrentPosition(p => {
-                const n = document.getElementById('nickname').value || "Player";
-                socket.emit('registerUser', { nick: n, lat: p.coords.latitude, lng: p.coords.longitude });
-                document.getElementById('player-reg').classList.add('hidden');
+                socket.emit('registerUser', { nick, lat: p.coords.latitude, lng: p.coords.longitude });
+                document.getElementById(type === 'admin' ? 'admin-setup' : 'player-reg').classList.add('hidden');
                 map.setView([p.coords.latitude, p.coords.longitude], 16);
             });
         }
 
-        function showMyQR() {
+        socket.on('profileCreated', d => {
+            myId = d.id;
+            document.getElementById('main-dashboard').classList.remove('hidden');
+            document.getElementById('user-hello').innerText = d.user.nick;
+            if(window.location.search.includes('admin')) document.getElementById('admin-powers').classList.remove('hidden');
+            QRCode.toCanvas(document.getElementById('qr-canvas'), window.location.origin + "/?target=" + myId);
+        });
+
+        socket.on('receiveLike', d => {
+            interactionsReceived.push(d);
+            updateCounters();
+        });
+
+        function updateCounters() {
+            document.getElementById('count-like').innerText = interactionsReceived.filter(i => i.type.includes('❤️')).length;
+            document.getElementById('count-coffee').innerText = interactionsReceived.filter(i => i.type.includes('☕')).length;
+            document.getElementById('count-cheers').innerText = interactionsReceived.filter(i => i.type.includes('🥂')).length;
+            document.getElementById('count-clap').innerText = interactionsReceived.filter(i => i.type.includes('👏')).length;
+        }
+
+        function showLikers(type) {
+            const list = document.getElementById('notif-list');
+            const filtered = interactionsReceived.filter(i => i.type === type);
+            list.innerHTML = filtered.length ? `<p style="padding:10px; font-weight:bold; margin:0; border-bottom:1px solid #eee">Hanno inviato ${type}:</p>` : "";
+            filtered.forEach(i => {
+                list.innerHTML += `<div class="notif-item">
+                    <span>${i.fromNick || 'Anonimo'}</span>
+                    <button class="btn-reply" onclick="prepareReply('${i.from}')">RICAMBIA</button>
+                </div>`;
+            });
+            list.classList.toggle('hidden');
+        }
+
+        function prepareReply(id) {
+            currentTargetId = id;
             document.getElementById('overlay').style.display = 'flex';
-            document.getElementById('qr-container').classList.remove('hidden');
             document.getElementById('scanner-container').classList.add('hidden');
-            document.getElementById('interaction-menu').classList.add('hidden');
-            QRCode.toCanvas(document.getElementById('qr-canvas'), window.location.origin + "/?target=" + myId, { width: 250 });
+            document.getElementById('reply-to-label').innerText = "Ricambia il messaggio:";
         }
 
         function startScanner() {
             document.getElementById('overlay').style.display = 'flex';
             document.getElementById('scanner-container').classList.remove('hidden');
-            document.getElementById('qr-container').classList.add('hidden');
-            document.getElementById('interaction-menu').classList.add('hidden');
             html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-                const url = new URL(text);
-                currentTargetId = url.searchParams.get("target");
-                if(currentTargetId) { html5QrCode.stop(); openMenu(); }
+                currentTargetId = new URL(text).searchParams.get("target");
+                html5QrCode.stop();
+                document.getElementById('scanner-container').classList.add('hidden');
             });
-        }
-
-        function openMenu() {
-            document.getElementById('scanner-container').classList.add('hidden');
-            document.getElementById('interaction-menu').classList.remove('hidden');
         }
 
         function sendInteraction(type) {
             socket.emit('sendLike', { to: currentTargetId, from: myId, type: type });
-            alert("Interazione Inviata!");
             closeOverlay();
-        }
-
-        socket.on('receiveLike', d => {
-            const p = document.createElement('div');
-            p.className = 'like-popup';
-            p.innerHTML = `Messaggio ricevuto:<br><span style="font-size:1.4rem">${d.type}</span>`;
-            document.body.appendChild(p);
-            setTimeout(() => p.remove(), 5000);
-        });
-
-        function inviteWA() {
-            window.open(`https://wa.me/?text=${encodeURIComponent("Gioca a Lumina con me! " + window.location.origin)}`, '_blank');
+            alert("Inviato!");
         }
 
         function closeOverlay() {
@@ -215,17 +203,6 @@
             if(html5QrCode) try { html5QrCode.stop(); } catch(e){}
         }
 
-        socket.on('profileCreated', d => {
-            myId = d.id;
-            document.getElementById('main-dashboard').classList.remove('hidden');
-            document.getElementById('user-hello').innerText = "In gioco come: " + d.user.nick;
-            if(isAdmin) document.getElementById('admin-powers').classList.remove('hidden');
-        });
-
-        socket.on('updateStats', c => { document.getElementById('user-count').innerText = "Online: " + c; });
-        socket.on('timerStarted', d => { 
-            document.getElementById('display-title').innerText = d.name;
-        });
         socket.on('updateMap', users => {
             Object.values(users).forEach(u => {
                 if(u.id !== socket.id) {
@@ -234,9 +211,9 @@
                 }
             });
         });
-        function toggleSetup() { document.getElementById('admin-setup').classList.toggle('hidden'); }
-        function resetAll() { if(confirm("RESET TOTALE?")) socket.emit('adminRequestReset'); }
-        socket.on('gameDeleted', () => location.href = window.location.origin + (isAdmin ? "?admin=1" : ""));
+
+        function resetAll() { if(confirm("RESET?")) socket.emit('adminRequestReset'); }
+        socket.on('gameDeleted', () => location.href = window.location.origin + (window.location.search.includes('admin') ? "?admin=1" : ""));
     </script>
 </body>
 </html>
