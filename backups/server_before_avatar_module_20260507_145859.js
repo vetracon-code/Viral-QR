@@ -176,7 +176,6 @@ io.on('connection', socket => {
       id: socket.id,
       nick: requestedNick,
       role: userData.role || 'player',
-      avatar: userData.avatar || { anon: true },
       lat: Number(userData.lat),
       lng: Number(userData.lng),
       outsideArea: false,

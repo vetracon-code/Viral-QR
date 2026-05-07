@@ -603,126 +603,6 @@
       .w-bottom-left { bottom: 30px; left: 30px; }
     }
 
-  
-    .avatar-module {
-      margin: 14px 0 16px 0;
-      padding: 14px;
-      border: 1px solid #e6e8f0;
-      border-radius: 16px;
-      background: #fafbff;
-      text-align: left;
-    }
-
-    .avatar-module-title {
-      font-size: .78rem;
-      font-weight: 950;
-      color: #1A237E;
-      text-transform: uppercase;
-      letter-spacing: .04em;
-      margin-bottom: 8px;
-    }
-
-    .avatar-preview-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .avatar-preview {
-      width: 68px;
-      height: 68px;
-      border-radius: 999px;
-      overflow: hidden;
-      border: 3px solid #D4AF37;
-      background: white;
-      flex: 0 0 auto;
-      box-shadow: 0 3px 12px rgba(0,0,0,.12);
-    }
-
-    .avatar-preview svg {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    .avatar-hint {
-      font-size: .82rem;
-      color: #444;
-      line-height: 1.35;
-      font-weight: 650;
-    }
-
-    .avatar-controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .avatar-controls select {
-      width: 100%;
-      padding: 10px;
-      border-radius: 11px;
-      border: 1px solid #d9dce5;
-      background: white;
-      font-weight: 750;
-      color: #1A237E;
-    }
-
-    .avatar-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .avatar-mini {
-      width: 42px;
-      height: 42px;
-      border-radius: 999px;
-      overflow: hidden;
-      border: 2px solid #D4AF37;
-      background: white;
-      margin: 0 auto 6px auto;
-    }
-
-    .avatar-mini svg {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    .avatar-marker {
-      width: 34px;
-      height: 34px;
-      border-radius: 999px;
-      overflow: hidden;
-      border: 2px solid #D4AF37;
-      background: white;
-      box-shadow: 0 3px 9px rgba(0,0,0,.28);
-    }
-
-    .avatar-marker.self {
-      border-color: #1A237E;
-    }
-
-    .avatar-marker.outside {
-      opacity: .45;
-      filter: grayscale(.6);
-    }
-
-    .avatar-marker svg {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    @media (max-width: 420px) {
-      .avatar-controls {
-        grid-template-columns: 1fr;
-      }
-    }
-
   </style>
 </head>
 
@@ -834,70 +714,6 @@
           <input type="text" id="adm-nick" placeholder="Nickname Admin">
         </div>
 
-      <div class="avatar-module" id="admin-avatar-module">
-        <div class="avatar-module-title">Avatar</div>
-        <div class="avatar-preview-row">
-          <div class="avatar-preview" id="avatar-preview-admin"></div>
-          <div class="avatar-hint">Scegli come apparire nel gioco. Puoi renderti riconoscibile o restare più neutro.</div>
-        </div>
-
-        <div class="avatar-controls">
-          <select id="avatar-face-admin" onchange="updateAvatarPreview('admin')">
-            <option value="oval">Viso ovale</option>
-            <option value="round">Viso tondo</option>
-            <option value="square">Viso deciso</option>
-            <option value="long">Viso allungato</option>
-          </select>
-
-          <select id="avatar-skin-admin" onchange="updateAvatarPreview('admin')">
-            <option value="light">Pelle chiara</option>
-            <option value="warm">Pelle calda</option>
-            <option value="olive">Pelle olivastra</option>
-            <option value="medium">Pelle media</option>
-            <option value="dark">Pelle scura</option>
-          </select>
-
-          <select id="avatar-hair-admin" onchange="updateAvatarPreview('admin')">
-            <option value="short">Capelli corti</option>
-            <option value="wavy">Capelli mossi</option>
-            <option value="curly">Capelli ricci</option>
-            <option value="long">Capelli lunghi</option>
-            <option value="tied">Capelli raccolti</option>
-            <option value="bald">Senza capelli</option>
-          </select>
-
-          <select id="avatar-hairColor-admin" onchange="updateAvatarPreview('admin')">
-            <option value="brown">Castano</option>
-            <option value="dark">Moro</option>
-            <option value="black">Nero</option>
-            <option value="blonde">Biondo</option>
-            <option value="red">Ramato</option>
-            <option value="gray">Grigio</option>
-            <option value="color">Colorato</option>
-          </select>
-
-          <select id="avatar-beard-admin" onchange="updateAvatarPreview('admin')">
-            <option value="none">Senza barba</option>
-            <option value="shadow">Barba accennata</option>
-            <option value="short">Barba corta</option>
-            <option value="full">Barba piena</option>
-            <option value="moustache">Baffi</option>
-          </select>
-
-          <select id="avatar-glasses-admin" onchange="updateAvatarPreview('admin')">
-            <option value="none">Senza occhiali</option>
-            <option value="round">Occhiali tondi</option>
-            <option value="square">Occhiali squadrati</option>
-            <option value="sun">Occhiali scuri</option>
-          </select>
-        </div>
-
-        <div class="avatar-actions">
-          <button class="btn btn-light" type="button" onclick="randomizeAvatar('admin')">CASUALE</button>
-          <button class="btn btn-light" type="button" onclick="setAnonymousAvatar('admin')">ANONIMO</button>
-        </div>
-      </div>
-
         <button class="btn btn-green" onclick="joinGame('admin')">ENTRA NEL GIOCO COME ADMIN</button>
       </div>
     </div>
@@ -906,70 +722,6 @@
       <h3 id="player-reg-title">Benvenuto</h3>
       <p id="player-reg-subtitle" style="margin-top:-4px; color:#444; font-size:.92rem; line-height:1.35;"></p>
       <input type="text" id="nickname" placeholder="Tuo Nickname" oninput="handlePlayerNickInput()" style="width:100%; padding:13px; margin-bottom:12px; border-radius:12px; border:1px solid #ddd;">
-      <div class="avatar-module" id="player-avatar-module">
-        <div class="avatar-module-title">Avatar</div>
-        <div class="avatar-preview-row">
-          <div class="avatar-preview" id="avatar-preview-player"></div>
-          <div class="avatar-hint">Scegli come apparire nel gioco. Puoi renderti riconoscibile o restare più neutro.</div>
-        </div>
-
-        <div class="avatar-controls">
-          <select id="avatar-face-player" onchange="updateAvatarPreview('player')">
-            <option value="oval">Viso ovale</option>
-            <option value="round">Viso tondo</option>
-            <option value="square">Viso deciso</option>
-            <option value="long">Viso allungato</option>
-          </select>
-
-          <select id="avatar-skin-player" onchange="updateAvatarPreview('player')">
-            <option value="light">Pelle chiara</option>
-            <option value="warm">Pelle calda</option>
-            <option value="olive">Pelle olivastra</option>
-            <option value="medium">Pelle media</option>
-            <option value="dark">Pelle scura</option>
-          </select>
-
-          <select id="avatar-hair-player" onchange="updateAvatarPreview('player')">
-            <option value="short">Capelli corti</option>
-            <option value="wavy">Capelli mossi</option>
-            <option value="curly">Capelli ricci</option>
-            <option value="long">Capelli lunghi</option>
-            <option value="tied">Capelli raccolti</option>
-            <option value="bald">Senza capelli</option>
-          </select>
-
-          <select id="avatar-hairColor-player" onchange="updateAvatarPreview('player')">
-            <option value="brown">Castano</option>
-            <option value="dark">Moro</option>
-            <option value="black">Nero</option>
-            <option value="blonde">Biondo</option>
-            <option value="red">Ramato</option>
-            <option value="gray">Grigio</option>
-            <option value="color">Colorato</option>
-          </select>
-
-          <select id="avatar-beard-player" onchange="updateAvatarPreview('player')">
-            <option value="none">Senza barba</option>
-            <option value="shadow">Barba accennata</option>
-            <option value="short">Barba corta</option>
-            <option value="full">Barba piena</option>
-            <option value="moustache">Baffi</option>
-          </select>
-
-          <select id="avatar-glasses-player" onchange="updateAvatarPreview('player')">
-            <option value="none">Senza occhiali</option>
-            <option value="round">Occhiali tondi</option>
-            <option value="square">Occhiali squadrati</option>
-            <option value="sun">Occhiali scuri</option>
-          </select>
-        </div>
-
-        <div class="avatar-actions">
-          <button class="btn btn-light" type="button" onclick="randomizeAvatar('player')">CASUALE</button>
-          <button class="btn btn-light" type="button" onclick="setAnonymousAvatar('player')">ANONIMO</button>
-        </div>
-      </div>
-
       <button id="player-join-btn" class="btn btn-gold" onclick="joinGame('player')">ENTRA NEL GIOCO</button>
     </div>
 
@@ -1064,11 +816,6 @@
       document.getElementById('admin-setup').classList.remove('hidden');
       document.getElementById('player-reg').classList.add('hidden');
     }
-
-    setTimeout(() => {
-      updateAvatarPreview('player');
-      updateAvatarPreview('admin');
-    }, 80);
 
 
     if (isJoinInvite) {
@@ -1297,166 +1044,6 @@
     });
 
 
-
-    const avatarPalettes = {
-      skin: {
-        light: '#F4C9A9',
-        warm: '#DFA06E',
-        olive: '#C58B5C',
-        medium: '#A96B43',
-        dark: '#6E3D2E',
-        anon: '#D8DEF5'
-      },
-      hair: {
-        brown: '#6B3F27',
-        dark: '#2B1B13',
-        black: '#111111',
-        blonde: '#D9B45F',
-        red: '#A84F2B',
-        gray: '#9CA3AF',
-        color: '#7C3AED',
-        none: 'transparent'
-      },
-      bg: ['#F8E7A1', '#DCE7FF', '#EDE7FF', '#DFF7EA', '#FFE3E3', '#E7F7FF']
-    };
-
-    function getAvatarConfig(scope) {
-      return {
-        face: document.getElementById(`avatar-face-${scope}`)?.value || 'oval',
-        skin: document.getElementById(`avatar-skin-${scope}`)?.value || 'light',
-        hair: document.getElementById(`avatar-hair-${scope}`)?.value || 'short',
-        hairColor: document.getElementById(`avatar-hairColor-${scope}`)?.value || 'brown',
-        beard: document.getElementById(`avatar-beard-${scope}`)?.value || 'none',
-        glasses: document.getElementById(`avatar-glasses-${scope}`)?.value || 'none',
-        bg: document.getElementById(`avatar-bg-${scope}`)?.value || 'auto',
-        anon: false
-      };
-    }
-
-    function setAvatarSelects(scope, cfg) {
-      ['face', 'skin', 'hair', 'hairColor', 'beard', 'glasses'].forEach(key => {
-        const el = document.getElementById(`avatar-${key}-${scope}`);
-        if (el && cfg[key]) el.value = cfg[key];
-      });
-    }
-
-    function randomizeAvatar(scope) {
-      const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-      const cfg = {
-        face: pick(['oval', 'round', 'square', 'long']),
-        skin: pick(['light', 'warm', 'olive', 'medium', 'dark']),
-        hair: pick(['short', 'wavy', 'curly', 'long', 'tied', 'bald']),
-        hairColor: pick(['brown', 'dark', 'black', 'blonde', 'red', 'gray', 'color']),
-        beard: pick(['none', 'none', 'shadow', 'short', 'full', 'moustache']),
-        glasses: pick(['none', 'none', 'round', 'square', 'sun']),
-        anon: false
-      };
-
-      if (cfg.hair === 'bald') cfg.hairColor = 'gray';
-      if (['long', 'tied'].includes(cfg.hair)) cfg.beard = 'none';
-
-      setAvatarSelects(scope, cfg);
-      updateAvatarPreview(scope);
-    }
-
-    function setAnonymousAvatar(scope) {
-      const cfg = {
-        face: 'oval',
-        skin: 'light',
-        hair: 'bald',
-        hairColor: 'gray',
-        beard: 'none',
-        glasses: 'none',
-        anon: true
-      };
-
-      window[`avatarAnon_${scope}`] = true;
-      setAvatarSelects(scope, cfg);
-      updateAvatarPreview(scope);
-    }
-
-    function updateAvatarPreview(scope) {
-      const box = document.getElementById(`avatar-preview-${scope}`);
-      if (!box) return;
-
-      const cfg = getAvatarConfig(scope);
-      if (window[`avatarAnon_${scope}`]) cfg.anon = true;
-
-      box.innerHTML = renderAvatarSvg(cfg);
-    }
-
-    function selectedAvatar(scope) {
-      const cfg = getAvatarConfig(scope);
-      if (window[`avatarAnon_${scope}`]) cfg.anon = true;
-      return cfg;
-    }
-
-    function renderAvatarSvg(cfg = {}) {
-      const anon = !!cfg.anon;
-      const bgIndex = Math.abs(JSON.stringify(cfg).split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % avatarPalettes.bg.length;
-      const bg = avatarPalettes.bg[bgIndex];
-
-      if (anon) {
-        return `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <radialGradient id="g" cx="50%" cy="38%" r="60%">
-                <stop offset="0%" stop-color="#FFFFFF"/>
-                <stop offset="55%" stop-color="#D4AF37"/>
-                <stop offset="100%" stop-color="#1A237E"/>
-              </radialGradient>
-            </defs>
-            <circle cx="50" cy="50" r="50" fill="#10194f"/>
-            <circle cx="50" cy="50" r="34" fill="url(#g)" opacity=".9"/>
-            <circle cx="50" cy="50" r="16" fill="#fff" opacity=".72"/>
-            <path d="M50 14 L55 38 L79 50 L55 62 L50 86 L45 62 L21 50 L45 38 Z" fill="#fff" opacity=".72"/>
-          </svg>
-        `;
-      }
-
-      const skin = avatarPalettes.skin[cfg.skin] || avatarPalettes.skin.light;
-      const hair = cfg.hair === 'bald' ? 'transparent' : (avatarPalettes.hair[cfg.hairColor] || avatarPalettes.hair.brown);
-
-      const faceShapes = {
-        oval: '<ellipse cx="50" cy="52" rx="23" ry="29" fill="' + skin + '"/>',
-        round: '<circle cx="50" cy="53" r="25" fill="' + skin + '"/>',
-        square: '<rect x="27" y="28" width="46" height="52" rx="16" fill="' + skin + '"/>',
-        long: '<ellipse cx="50" cy="53" rx="21" ry="32" fill="' + skin + '"/>'
-      };
-
-      let hairSvg = '';
-      if (cfg.hair === 'short') hairSvg = `<path d="M27 42 C30 18, 70 18, 73 42 C63 32, 40 30, 27 42Z" fill="${hair}"/>`;
-      if (cfg.hair === 'wavy') hairSvg = `<path d="M25 43 C26 20, 42 19, 50 25 C61 16, 75 24, 75 44 C62 35, 42 32, 25 43Z" fill="${hair}"/>`;
-      if (cfg.hair === 'curly') hairSvg = `<path d="M25 44 C20 25, 34 18, 44 22 C50 14, 67 17, 75 31 C83 44, 70 51, 59 39 C48 49, 36 35, 25 44Z" fill="${hair}"/>`;
-      if (cfg.hair === 'long') hairSvg = `<path d="M24 43 C23 20, 76 18, 76 45 L72 86 C60 78, 40 78, 28 86Z" fill="${hair}"/>`;
-      if (cfg.hair === 'tied') hairSvg = `<path d="M27 42 C30 20, 70 20, 73 42 C62 34, 38 34, 27 42Z" fill="${hair}"/><circle cx="77" cy="52" r="9" fill="${hair}"/>`;
-
-      let beardSvg = '';
-      if (cfg.beard === 'shadow') beardSvg = `<path d="M34 62 C42 74, 58 74, 66 62 C62 82, 38 82, 34 62Z" fill="#000" opacity=".12"/>`;
-      if (cfg.beard === 'short') beardSvg = `<path d="M32 60 C38 82, 62 82, 68 60 C64 76, 36 76, 32 60Z" fill="${hair}" opacity=".78"/>`;
-      if (cfg.beard === 'full') beardSvg = `<path d="M30 56 C31 87, 69 87, 70 56 C65 78, 35 78, 30 56Z" fill="${hair}" opacity=".88"/>`;
-      if (cfg.beard === 'moustache') beardSvg = `<path d="M38 61 C43 56, 48 58, 50 62 C52 58, 57 56, 62 61 C57 66, 43 66, 38 61Z" fill="${hair}"/>`;
-
-      let glassesSvg = '';
-      if (cfg.glasses === 'round') glassesSvg = `<circle cx="41" cy="51" r="7" fill="none" stroke="#111" stroke-width="2"/><circle cx="59" cy="51" r="7" fill="none" stroke="#111" stroke-width="2"/><path d="M48 51 L52 51" stroke="#111" stroke-width="2"/>`;
-      if (cfg.glasses === 'square') glassesSvg = `<rect x="34" y="45" width="14" height="10" rx="2" fill="none" stroke="#111" stroke-width="2"/><rect x="52" y="45" width="14" height="10" rx="2" fill="none" stroke="#111" stroke-width="2"/><path d="M48 50 L52 50" stroke="#111" stroke-width="2"/>`;
-      if (cfg.glasses === 'sun') glassesSvg = `<path d="M33 45 H48 V56 H36 Z" fill="#111" opacity=".82"/><path d="M52 45 H67 L64 56 H52 Z" fill="#111" opacity=".82"/><path d="M48 50 L52 50" stroke="#111" stroke-width="2"/>`;
-
-      return `
-        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="50" cy="50" r="50" fill="${bg}"/>
-          <circle cx="50" cy="84" r="25" fill="#1A237E" opacity=".88"/>
-          ${hairSvg}
-          ${faceShapes[cfg.face] || faceShapes.oval}
-          ${beardSvg}
-          <circle cx="41" cy="52" r="2.2" fill="#1a1a1a"/>
-          <circle cx="59" cy="52" r="2.2" fill="#1a1a1a"/>
-          <path d="M44 66 Q50 70 56 66" fill="none" stroke="#7A3E2D" stroke-width="2.3" stroke-linecap="round"/>
-          ${glassesSvg}
-        </svg>
-      `;
-    }
-
     function showInviteQr() {
       const box = document.getElementById('invite-qr-box');
       const nick = document.getElementById('invite-nick');
@@ -1632,7 +1219,6 @@
         socket.emit('registerUser', {
           nick,
           role: type === 'admin' ? 'admin' : 'player',
-          avatar: selectedAvatar(type),
           lat: p.coords.latitude,
           lng: p.coords.longitude
         });
@@ -1774,34 +1360,26 @@
         const isOutside = !!u.outsideArea;
         const safeNick = String(u.nick || 'Utente').replace(/'/g, "\\'");
 
-        const avatarHtml = `<div class="avatar-mini">${renderAvatarSvg(u.avatar || { anon: true })}</div>`;
-
         const popupHtml = isMe
-          ? `${avatarHtml}<div class="map-popup-name">${u.nick || 'Io'}</div><div class="map-popup-self">${isOutside ? 'Fuori area' : 'Sei tu'}</div>`
+          ? `<div class="map-popup-name">${u.nick || 'Io'}</div><div class="map-popup-self">${isOutside ? 'Fuori area' : 'Sei tu'}</div>`
           : isOutside
-            ? `${avatarHtml}<div class="map-popup-name">${u.nick || 'Utente'}</div><div class="map-popup-status">Fuori area: temporaneamente non attivo</div>`
-            : `${avatarHtml}<div class="map-popup-name">${u.nick || 'Utente'}</div><button class="map-popup-btn" onclick="prepareInteractionWith('${u.id}', '${safeNick}')">Invia gradimento</button>`;
+            ? `<div class="map-popup-name">${u.nick || 'Utente'}</div><div class="map-popup-status">Fuori area: temporaneamente non attivo</div>`
+            : `<div class="map-popup-name">${u.nick || 'Utente'}</div><button class="map-popup-btn" onclick="prepareInteractionWith('${u.id}', '${safeNick}')">Invia gradimento</button>`;
 
         if (markers[u.id]) {
           markers[u.id].setLatLng([u.lat, u.lng]);
-          markers[u.id].setIcon(L.divIcon({
-            className: '',
-            html: `<div class="avatar-marker ${isMe ? 'self' : ''} ${isOutside ? 'outside' : ''}">${renderAvatarSvg(u.avatar || { anon: true })}</div>`,
-            iconSize: [38, 38],
-            iconAnchor: [19, 19],
-            popupAnchor: [0, -20]
-          }));
+          markers[u.id].setStyle({
+            opacity: isOutside ? 0.45 : 1,
+            fillOpacity: isOutside ? 0.25 : 0.85
+          });
           markers[u.id].setPopupContent(popupHtml);
         } else {
-          const icon = L.divIcon({
-            className: '',
-            html: `<div class="avatar-marker ${isMe ? 'self' : ''} ${isOutside ? 'outside' : ''}">${renderAvatarSvg(u.avatar || { anon: true })}</div>`,
-            iconSize: [38, 38],
-            iconAnchor: [19, 19],
-            popupAnchor: [0, -20]
-          });
-
-          const marker = L.marker([u.lat, u.lng], { icon }).addTo(map).bindPopup(popupHtml);
+          const marker = L.circleMarker([u.lat, u.lng], {
+            radius: isMe ? 9 : 8,
+            weight: 3,
+            opacity: isOutside ? 0.45 : 1,
+            fillOpacity: isOutside ? 0.25 : 0.85
+          }).addTo(map).bindPopup(popupHtml);
 
           marker.__userId = u.id;
           markers[u.id] = marker;
