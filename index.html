@@ -267,10 +267,10 @@
             </div>
 
             <div class="admin-field">
-                <label>Localizzazione evento</label>
+                <label>Luogo evento</label>
                 <div class="admin-choice">
-                    <button class="btn btn-light btn-active" id="btn-loc-gps" onclick="setLocationMode('gps')">Usa la mia posizione</button>
-                    <button class="btn btn-light" id="btn-loc-address" onclick="setLocationMode('address')">Inserisci indirizzo</button>
+                    <button type="button" class="btn btn-light btn-active" id="btn-loc-gps" onclick="setLocationMode('gps')">Usa la mia posizione</button>
+                    <button type="button" class="btn btn-light" id="btn-loc-address" onclick="setLocationMode('address')">Inserisci indirizzo</button>
                 </div>
                 <input type="text" id="adm-address" class="hidden" placeholder="Es. Piazza Duomo, Milano">
             </div>
@@ -279,11 +279,15 @@
 
             <button class="btn btn-gold" onclick="activateArea()">ATTIVA AREA GIOCO</button>
 
-            <div id="admin-join-section" class="hidden">
-                <input type="text" id="adm-nick" placeholder="Tuo Nickname" style="width:100%; padding:10px; margin-bottom:10px;">
-                <button class="btn" style="background:#28a745" onclick="joinGame('admin')">ENTRA NEL GIOCO</button>
+            <div id="admin-join-section" class="hidden" style="margin-top:18px;">
+                <div class="admin-field">
+                    <label>Il tuo nome nel gioco</label>
+                    <input type="text" id="adm-nick" placeholder="Nickname Admin">
+                </div>
+                <button class="btn" style="background:#28a745" onclick="joinGame('admin')">ENTRA NEL GIOCO COME ADMIN</button>
             </div>
         </div>
+
 
         <div id="player-reg" class="card">
             <h3>Benvenuto</h3>
@@ -292,6 +296,10 @@
         </div>
 
         <div id="main-dashboard" class="hidden">
+            <div id="game-timer-box" class="hidden">
+                <div class="timer-title">Tempo rimanente</div>
+                <div id="game-timer">--:--</div>
+            </div>
             <div class="player-profile">
                 <h3 id="user-hello" style="margin:0"></h3>
                 
@@ -331,6 +339,13 @@
         const socket = io();
         let myId, markers = {}, html5QrCode, currentTargetId;
         let interactionsReceived = [];
+        let locationMode = 'gps';
+        let confirmedAddressLocation = null;
+        let timerInterval = null;
+        let currentGameEndTime = null;
+        let currentGameCenter = null;
+        let currentGameRadius = 150;
+        let eventCircle = null;
         let locationMode = 'gps';
         let confirmedAddressLocation = null;
         let timerInterval = null;
@@ -478,20 +493,33 @@
             document.getElementById('player-reg').classList.add('hidden');
         }
 
+
         function setLocationMode(mode) {
             locationMode = mode;
             confirmedAddressLocation = null;
-            document.getElementById('adm-address').classList.toggle('hidden', mode !== 'address');
-            document.getElementById('address-confirm-box').classList.add('hidden');
-            document.getElementById('btn-loc-gps').classList.toggle('btn-active', mode === 'gps');
-            document.getElementById('btn-loc-address').classList.toggle('btn-active', mode === 'address');
+
+            const addressInput = document.getElementById('adm-address');
+            const confirmBox = document.getElementById('address-confirm-box');
+
+            if (addressInput) addressInput.classList.toggle('hidden', mode !== 'address');
+            if (confirmBox) confirmBox.classList.add('hidden');
+
+            const gpsBtn = document.getElementById('btn-loc-gps');
+            const addressBtn = document.getElementById('btn-loc-address');
+
+            if (gpsBtn) gpsBtn.classList.toggle('btn-active', mode === 'gps');
+            if (addressBtn) addressBtn.classList.toggle('btn-active', mode === 'address');
         }
 
         async function geocodeAddress(address) {
             const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(address);
             const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
             const data = await res.json();
-            if (!data || !data.length) throw new Error('Indirizzo non trovato.');
+
+            if (!data || !data.length) {
+                throw new Error('Indirizzo non trovato. Prova a scriverlo in modo più completo.');
+            }
+
             return {
                 lat: parseFloat(data[0].lat),
                 lng: parseFloat(data[0].lon),
@@ -500,21 +528,22 @@
         }
 
         function getDurationSettings() {
-            const value = parseInt(document.getElementById('adm-duration-value').value, 10) || 60;
-            const unit = document.getElementById('adm-duration-unit').value || 'min';
+            const value = parseInt(document.getElementById('adm-duration-value')?.value, 10) || 60;
+            const unit = document.getElementById('adm-duration-unit')?.value || 'min';
             return { value: Math.max(1, value), unit };
         }
 
         function getRadiusSettings() {
-            const value = parseFloat(document.getElementById('adm-radius-value').value) || 150;
-            const unit = document.getElementById('adm-radius-unit').value || 'm';
+            const value = parseFloat(document.getElementById('adm-radius-value')?.value) || 150;
+            const unit = document.getElementById('adm-radius-unit')?.value || 'm';
             const meters = unit === 'km' ? value * 1000 : value;
             return Math.max(20, Math.round(meters));
         }
 
         async function activateArea() {
-            const name = document.getElementById('adm-event-name').value.trim() || "Lumina";
+            const name = document.getElementById('adm-event-name')?.value.trim() || "Lumina";
             const duration = getDurationSettings();
+            const radiusMeters = getRadiusSettings();
 
             if (locationMode === 'gps') {
                 navigator.geolocation.getCurrentPosition(p => {
@@ -522,18 +551,25 @@
                         name,
                         value: duration.value,
                         unit: duration.unit,
-                        radiusMeters: getRadiusSettings(),
+                        radiusMeters,
                         lat: p.coords.latitude,
                         lng: p.coords.longitude
                     });
+
                     document.getElementById('admin-join-section').classList.remove('hidden');
                 }, () => {
                     alert("Non riesco a leggere la tua posizione. Puoi usare l'indirizzo manuale.");
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 5000
                 });
+
                 return;
             }
 
-            const address = document.getElementById('adm-address').value.trim();
+            const address = document.getElementById('adm-address')?.value.trim();
+
             if (!address) {
                 alert("Inserisci un indirizzo prima di attivare l'area gioco.");
                 return;
@@ -545,8 +581,9 @@
 
                 if (!confirmedAddressLocation || confirmedAddressLocation.label !== found.label) {
                     confirmedAddressLocation = found;
+
                     box.innerHTML = `
-                        <strong>Confermi questo indirizzo?</strong><br>
+                        <strong>Confermi questo luogo?</strong><br>
                         ${found.label}<br><br>
                         <button class="btn btn-gold" onclick="activateArea()">CONFERMA E ATTIVA</button>
                     `;
@@ -558,15 +595,17 @@
                     name,
                     value: duration.value,
                     unit: duration.unit,
-                    radiusMeters: getRadiusSettings(),
+                    radiusMeters,
                     lat: confirmedAddressLocation.lat,
                     lng: confirmedAddressLocation.lng
                 });
+
                 document.getElementById('admin-join-section').classList.remove('hidden');
             } catch (e) {
                 alert(e.message || "Errore nella ricerca dell'indirizzo.");
             }
         }
+
 
         function joinGame(type) {
             const nick = document.getElementById(type === 'admin' ? 'adm-nick' : 'nickname').value || "Player";

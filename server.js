@@ -82,16 +82,18 @@ io.on('connection', (socket) => {
     
     socket.on('adminStart', (data) => {
         let durationMs = data.unit === 'min' ? data.value * 60000 : data.value * 3600000;
+
         gameState.startedAt = Date.now();
         gameState.endTime = gameState.startedAt + durationMs;
         gameState.active = true;
-        gameState.name = data.name;
-        gameState.center = { lat: data.lat, lng: data.lng };
+        gameState.name = data.name || "Lumina";
+        gameState.center = { lat: Number(data.lat), lng: Number(data.lng) };
         gameState.radiusMeters = Math.max(20, Number(data.radiusMeters) || 150);
+
         io.emit('timerStarted', {
             startedAt: gameState.startedAt,
             endTime: gameState.endTime,
-            name: data.name,
+            name: gameState.name,
             center: gameState.center,
             radiusMeters: gameState.radiusMeters
         });
