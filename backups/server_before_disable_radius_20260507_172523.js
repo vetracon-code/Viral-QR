@@ -23,7 +23,6 @@ let gameState = {
   name: 'Lumina Live',
   center: null,
   radiusMeters: 150,
-  radiusDisabled: false,
   startedAt: null,
   endTime: null,
   active: false,
@@ -51,14 +50,6 @@ function distanceMeters(a, b) {
 
 function evaluateUserArea(socket, user) {
   if (!gameState.active || !gameState.center || !user) return;
-
-  if (gameState.radiusDisabled) {
-    user.outsideArea = false;
-    user.outsideSince = null;
-    user.distanceFromCenter = null;
-    socket.emit('backInsideArea');
-    return;
-  }
 
   const dist = distanceMeters(gameState.center, {
     lat: user.lat,
@@ -159,18 +150,14 @@ io.on('connection', socket => {
       lat: Number(data.lat),
       lng: Number(data.lng)
     };
-    gameState.radiusDisabled = !!data.radiusDisabled;
-    gameState.radiusMeters = gameState.radiusDisabled
-      ? null
-      : Math.max(20, Number(data.radiusMeters) || 150);
+    gameState.radiusMeters = Math.max(20, Number(data.radiusMeters) || 150);
 
     io.emit('timerStarted', {
       name: gameState.name,
       startedAt: gameState.startedAt,
       endTime: gameState.endTime,
       center: gameState.center,
-      radiusMeters: gameState.radiusMeters,
-      radiusDisabled: gameState.radiusDisabled
+      radiusMeters: gameState.radiusMeters
     });
 
     broadcastMap();
@@ -392,7 +379,6 @@ io.on('connection', socket => {
       name: 'Lumina Live',
       center: null,
       radiusMeters: 150,
-      radiusDisabled: false,
       startedAt: null,
       endTime: null,
       active: false,
