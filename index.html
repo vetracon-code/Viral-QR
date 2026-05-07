@@ -135,6 +135,46 @@
         #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:9999; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
         .interaction-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
         .btn-int { padding: 12px; border-radius: 10px; border: 1px solid #ddd; background: #f8f9fa; font-size: 0.85rem; cursor: pointer; }
+    
+        #qr-canvas {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            width: 180px !important;
+            height: 180px !important;
+            background: white;
+            position: relative;
+            z-index: 2;
+        }
+        #qr-canvas img,
+        #qr-canvas canvas {
+            display: block !important;
+            width: 180px !important;
+            height: 180px !important;
+        }
+        .map-popup-name {
+            font-weight: 800;
+            color: #1A237E;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .map-popup-btn {
+            border: none;
+            background: #D4AF37;
+            color: white;
+            padding: 8px 10px;
+            border-radius: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            width: 100%;
+        }
+        .map-popup-self {
+            font-size: 0.78rem;
+            color: #555;
+            text-align: center;
+            margin-top: 4px;
+        }
+
     </style>
 </head>
 <body>
@@ -213,8 +253,8 @@
                 <h3 id="user-hello" style="margin:0"></h3>
                 
                 <div class="qr-wrapper">
-                    <canvas id="qr-canvas"></canvas>
-                    <div class="stat-badge s-tl" onclick="showLikers('Mi sei simpatico 😊')">😊 <span id="count-friendly">0</span></div>
+                    <div id="qr-canvas"></div>
+                    <div id="qr-fallback">QR non disponibile.<br>Ricarica la pagina o riprova.</div><div class="stat-badge s-tl" onclick="showLikers('Mi sei simpatico 😊')">😊 <span id="count-friendly">0</span></div>
                     <div class="stat-badge s-tr" onclick="showLikers('Ti trovo interessante 🤔')">🤔 <span id="count-interesting">0</span></div>
                     <div class="stat-badge s-ml" onclick="showLikers('Prendiamo un caffè? ☕')">☕ <span id="count-coffee">0</span></div>
                     <div class="stat-badge s-mr" onclick="showLikers('Brindiamo! 🥂')">🥂 <span id="count-cheers">0</span></div>
@@ -240,7 +280,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -253,6 +293,7 @@
         let timerInterval = null;
         let currentGameEndTime = null;
         let currentGameCenter = null;
+        let pendingTargetFromUrl = new URLSearchParams(window.location.search).get("target");
 
         const map = L.map('map', { zoomControl: true }).setView([45.4642, 9.19], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
@@ -446,14 +487,19 @@
             if (currentGameEndTime) startGameTimer(currentGameEndTime);
             if(window.location.search.includes('admin')) document.getElementById('admin-powers').classList.remove('hidden');
             renderPersonalQr();
+
+            if (pendingTargetFromUrl && pendingTargetFromUrl !== myId) {
+                prepareInteractionWith(pendingTargetFromUrl, "utente selezionato");
+                pendingTargetFromUrl = null;
+            }
         });
 
         function renderPersonalQr() {
-            const canvas = document.getElementById('qr-canvas');
+            const qrBox = document.getElementById('qr-canvas');
             const fallback = document.getElementById('qr-fallback');
             const qrUrl = window.location.origin + "/?target=" + myId;
 
-            if (!canvas || !myId) {
+            if (!qrBox || !myId) {
                 if (fallback) {
                     fallback.style.display = 'flex';
                     fallback.innerHTML = "QR non disponibile.<br>ID giocatore mancante.";
@@ -461,31 +507,26 @@
                 return;
             }
 
-            canvas.style.display = 'block';
+            qrBox.innerHTML = "";
+            qrBox.style.display = 'flex';
             if (fallback) fallback.style.display = 'none';
 
             try {
-                if (!window.QRCode || !QRCode.toCanvas) {
-                    throw new Error("Libreria QRCode non caricata.");
+                if (typeof QRCode !== "function") {
+                    throw new Error("QRCodeJS non caricato.");
                 }
 
-                QRCode.toCanvas(canvas, qrUrl, {
+                new QRCode(qrBox, {
+                    text: qrUrl,
                     width: 180,
-                    margin: 1,
-                    errorCorrectionLevel: 'H'
-                }, function (error) {
-                    if (error) {
-                        console.error(error);
-                        canvas.style.display = 'none';
-                        if (fallback) {
-                            fallback.style.display = 'flex';
-                            fallback.innerHTML = "QR non generato.<br>Ricarica la pagina.";
-                        }
-                    }
+                    height: 180,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
                 });
             } catch (e) {
                 console.error(e);
-                canvas.style.display = 'none';
+                qrBox.style.display = 'none';
                 if (fallback) {
                     fallback.style.display = 'flex';
                     fallback.innerHTML = "QR non generato.<br>Libreria non caricata.";
@@ -520,11 +561,25 @@
             list.classList.toggle('hidden');
         }
 
-        function prepareReply(id) {
+        function prepareInteractionWith(id, nick) {
+            if (!id) {
+                alert("Utente non disponibile.");
+                return;
+            }
+
+            if (id === myId) {
+                alert("Questo sei tu. Puoi interagire con gli altri presenti.");
+                return;
+            }
+
             currentTargetId = id;
             document.getElementById('overlay').style.display = 'flex';
             document.getElementById('scanner-container').classList.add('hidden');
-            document.getElementById('reply-to-label').innerText = "Ricambia il messaggio:";
+            document.getElementById('reply-to-label').innerText = "Invia a " + (nick || "utente") + ":";
+        }
+
+        function prepareReply(id) {
+            prepareInteractionWith(id, "chi ti ha scritto");
         }
 
         function startScanner() {
@@ -535,6 +590,7 @@
                 currentTargetId = new URL(text).searchParams.get("target");
                 html5QrCode.stop();
                 document.getElementById('scanner-container').classList.add('hidden');
+                document.getElementById('reply-to-label').innerText = "Scegli cosa inviare:";
             });
         }
 
@@ -558,12 +614,42 @@
         }
 
         socket.on('updateMap', users => {
-            Object.values(users).forEach(u => {
-                if(u.id !== socket.id) {
-                    if(markers[u.id]) markers[u.id].setLatLng([u.lat, u.lng]);
-                    else markers[u.id] = L.marker([u.lat, u.lng]).addTo(map).bindPopup(u.nick);
+            const activeIds = new Set(Object.keys(users || {}));
+
+            Object.values(markers).forEach(marker => {
+                const id = marker.__userId;
+                if (!activeIds.has(id)) {
+                    map.removeLayer(marker);
+                    delete markers[id];
                 }
             });
+
+            Object.values(users || {}).forEach(u => {
+                if (!u || !u.lat || !u.lng || !u.id) return;
+
+                const isMe = u.id === myId;
+                const popupHtml = isMe
+                    ? `<div class="map-popup-name">${u.nick || 'Io'}</div><div class="map-popup-self">Sei tu</div>`
+                    : `<div class="map-popup-name">${u.nick || 'Utente'}</div><button class="map-popup-btn" onclick="prepareInteractionWith('${u.id}', '${String(u.nick || 'Utente').replace(/'/g, "\'")}')">Invia gradimento</button>`;
+
+                if (markers[u.id]) {
+                    markers[u.id].setLatLng([u.lat, u.lng]);
+                    markers[u.id].setPopupContent(popupHtml);
+                } else {
+                    const marker = L.circleMarker([u.lat, u.lng], {
+                        radius: isMe ? 9 : 8,
+                        weight: 3,
+                        opacity: 1,
+                        fillOpacity: 0.85
+                    }).addTo(map).bindPopup(popupHtml);
+
+                    marker.__userId = u.id;
+                    markers[u.id] = marker;
+                }
+            });
+
+            if (currentGameCenter) centerMapOnEvent(map.getZoom() || 16);
+        });
         });
 
         function recenterMapOnMe() {
