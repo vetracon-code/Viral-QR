@@ -40,6 +40,28 @@ io.on('connection', (socket) => {
         io.emit('updateMap', gameState.users);
     });
 
+    socket.on('sendLike', (data) => {
+        const targetId = data && data.to;
+        const fromId = data && data.from;
+        const type = data && data.type;
+
+        if (!targetId || !fromId || !type) return;
+
+        const sender = gameState.users[fromId];
+        const targetSocket = io.sockets.sockets.get(targetId);
+
+        if (!sender || !targetSocket) {
+            socket.emit('interactionError', { message: 'Utente non più disponibile.' });
+            return;
+        }
+
+        targetSocket.emit('receiveLike', {
+            from: fromId,
+            fromNick: sender.nick || 'Anonimo',
+            type
+        });
+    });
+
     socket.on('adminRequestReset', () => {
         gameState.users = {};
         gameState.active = false;
