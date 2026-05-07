@@ -3,139 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viral QR Social</title>
+    <title>Viral QR - Radar</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --ws-green: #25D366; --ws-bg: #f0f2f5; --ws-dark: #075E54; --ws-light-green: #dcf8c6; }
-        body { font-family: sans-serif; background: var(--ws-bg); margin: 0; display: flex; justify-content: center; }
-        .app-container { width: 100%; max-width: 450px; background: white; min-height: 100vh; display: flex; flex-direction: column; position: relative; }
+        :root { --ws-green: #25D366; --ws-dark: #075E54; --ws-bg: #f0f2f5; }
+        body { font-family: sans-serif; background: var(--ws-bg); margin:0; }
+        .app-container { max-width: 450px; margin: auto; background: white; min-height: 100vh; display: flex; flex-direction: column; }
         .header { background: var(--ws-dark); color: white; padding: 15px; text-align: center; }
-        .content { padding: 15px; text-align: center; flex: 1; padding-bottom: 80px; }
-        #timer-display { font-size: 2rem; font-weight: bold; color: #d32f2f; margin: 10px 0; }
+        #map { height: 250px; width: 100%; }
+        .content { padding: 15px; text-align: center; }
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        .btn-main { background: var(--ws-green); color: white; border: none; padding: 15px; width: 100%; border-radius: 25px; font-weight: bold; cursor: pointer; }
-        
-        /* Scanner Styles */
-        #reader { width: 100%; border-radius: 15px; overflow: hidden; margin-bottom: 15px; display: none; }
-        .scan-btn-fixed { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 80%; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-
-        .reaction-grid { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
-        .item { display: flex; flex-direction: column; align-items: center; background: #f8f9fa; padding: 8px; border-radius: 10px; min-width: 50px; border: 1px solid #eee; }
-        .count { font-size: 0.8rem; font-weight: bold; color: var(--ws-dark); }
-        .notif-card { background: var(--ws-light-green); padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; border-left: 4px solid var(--ws-green); }
+        .btn-green { background: var(--ws-green); color: white; border: none; padding: 12px; width: 100%; border-radius: 25px; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
+        .btn-share { background: #128C7E; color: white; border: none; padding: 10px; border-radius: 20px; width: 100%; font-size: 0.9rem; cursor: pointer; }
         .hidden { display: none; }
+        #qr-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:1000; display:none; flex-direction:column; align-items:center; justify-content:center; }
     </style>
 </head>
 <body>
+    <div id="qr-overlay" onclick="this.style.display='none'">
+        <h2>Il Tuo Passaporto Social</h2>
+        <div id="big-qr"></div>
+        <p>Tocca per chiudere</p>
+    </div>
+
     <div class="app-container">
         <div class="header">
-            <h2 style="margin:0">Viral QR</h2>
-            <p style="margin:5px 0 0 0; font-size:0.8rem; opacity:0.9">Scansiona chi ti circonda e scopri quanto piaci!</p>
+            <h2 id="event-name">Viral QR Radar</h2>
+            <div id="timer-display">00:00:00</div>
         </div>
 
+        <div id="map"></div>
+
         <div class="content">
-            <div id="timer-display">00:00:00</div>
-
-            <div id="admin-section" class="card hidden">
-                <input type="number" id="duration-value" value="1" style="width:50px">
-                <select id="duration-unit"><option value="min">Min</option><option value="ore">Ore</option></select>
-                <button onclick="startGlobalGame()">AVVIA GIOCO</button>
-            </div>
-
             <div id="reg-section" class="card">
-                <input type="text" id="nickname" style="width:85%; padding:10px; margin-bottom:10px;" placeholder="Tuo Nickname...">
-                <button class="btn-main" onclick="registerUser()">ENTRA NEL GIOCO</button>
+                <input type="text" id="nickname" placeholder="Nome..." style="width:80%; padding:10px; margin-bottom:10px;">
+                <button class="btn-green" onclick="registerUser()">ENTRA NEL RADAR</button>
             </div>
 
             <div id="profile-section" class="hidden">
-                <div id="reader"></div>
-                
                 <div class="card">
                     <h3 id="user-display-name"></h3>
-                    <div id="qr-container"><canvas id="qrcode"></canvas></div>
-                    <div class="reaction-grid" id="reaction-display"></div>
+                    <button class="btn-green" onclick="showBigQR()">Mostra il mio QR 📱</button>
+                    <button class="btn-share" onclick="shareWA()">Invita su WhatsApp 💬</button>
                 </div>
-                <div id="notif-list"></div>
             </div>
         </div>
-
-        <button id="toggle-scan" class="btn-main scan-btn-fixed hidden" onclick="toggleScanner()">📷 SCANSIONA QR</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const socket = io();
-        let myProfile = null;
-        let html5QrCode = null;
-        const icons = ['👍', '❤️', '🔥', '🙌', '😎', '✨'];
+        let map, userMarker;
+        let markers = {};
 
-        if (new URLSearchParams(window.location.search).has('admin')) document.getElementById('admin-section').classList.remove('hidden');
+        // Inizializza Mappa
+        map = L.map('map').setView([45.4642, 9.1900], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         function registerUser() {
             const nick = document.getElementById('nickname').value;
-            socket.emit('registerUser', { nick });
+            navigator.geolocation.getCurrentPosition(pos => {
+                const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                socket.emit('registerUser', { nick, ...coords });
+                map.setView([coords.lat, coords.lng], 16);
+            }, () => alert("Attiva il GPS per giocare!"));
         }
 
         socket.on('profileCreated', (data) => {
-            myProfile = data;
             document.getElementById('reg-section').classList.add('hidden');
             document.getElementById('profile-section').classList.remove('hidden');
-            document.getElementById('toggle-scan').classList.remove('hidden');
             document.getElementById('user-display-name').innerText = data.user.nick;
-            renderReactions(data.user.reactions);
-            QRCode.toCanvas(document.getElementById('qrcode'), window.location.origin + "/?target=" + socket.id, { width: 180 });
+            QRCode.toCanvas(document.getElementById('big-qr'), window.location.origin + "/?target=" + socket.id, { width: 300 });
         });
 
-        function toggleScanner() {
-            const readerDiv = document.getElementById('reader');
-            if (readerDiv.style.display === 'block') {
-                html5QrCode.stop();
-                readerDiv.style.display = 'none';
-            } else {
-                readerDiv.style.display = 'block';
-                html5QrCode = new Html5Qrcode("reader");
-                html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, 
-                    (decodedText) => {
-                        const url = new URL(decodedText);
-                        const targetId = url.searchParams.get('target');
-                        if(targetId) {
-                            alert("Hai inquadrato un profilo! Inviagli un ❤️");
-                            socket.emit('sendReaction', { toId: targetId, icon: '❤️', fromId: socket.id, fromNick: myProfile.user.nick });
-                            toggleScanner();
-                        }
-                    }
-                );
-            }
-        }
-
-        function renderReactions(reactions) {
-            const grid = document.getElementById('reaction-display');
-            grid.innerHTML = '';
-            icons.forEach(icon => {
-                grid.innerHTML += `<div class="item"><span>${icon}</span><div class="count">${reactions[icon]}</div></div>`;
+        socket.on('updateMap', (users) => {
+            Object.values(users).forEach(u => {
+                if (markers[u.id]) markers[u.id].setLatLng([u.lat, u.lng]);
+                else markers[u.id] = L.marker([u.lat, u.lng]).addTo(map).bindPopup(u.nick);
             });
-        }
-
-        socket.on('receiveNotification', (data) => {
-            const list = document.getElementById('notif-list');
-            const div = document.createElement('div');
-            div.className = 'notif-card';
-            div.innerHTML = `<span><b>${data.fromNick}</b> ti ha inviato ${data.icon}</span><button class="btn-main" style="width:auto; padding:5px 10px; font-size:0.7rem;" onclick="this.parentElement.remove()">OK</button>`;
-            list.prepend(div);
         });
 
-        socket.on('updateMyReactions', (reactions) => renderReactions(reactions));
-        
-        socket.on('timerStarted', (endTime) => {
-            setInterval(() => {
-                const diff = endTime - Date.now();
-                if (diff < 0) return;
-                const h = Math.floor(diff / 3600000);
-                const m = Math.floor((diff % 3600000) / 60000);
-                const s = Math.floor((diff % 60000) / 1000);
-                document.getElementById('timer-display').innerText = h + ":" + (m < 10 ? '0' : '') + m + ":" + (s < 10 ? '0' : '') + s;
-            }, 1000);
+        function showBigQR() { document.getElementById('qr-overlay').style.display = 'flex'; }
+
+        function shareWA() {
+            const text = encodeURIComponent("Entra nel radar Viral QR! Guarda quanto piaci: " + window.location.origin);
+            window.open("https://wa.me/?text=" + text);
+        }
+
+        socket.on('timerStarted', data => {
+            document.getElementById('event-name').innerText = data.name;
+            // Logica timer...
         });
     </script>
 </body>
